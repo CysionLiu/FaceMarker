@@ -15,7 +15,6 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -23,6 +22,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.regex.Pattern;
+
+import static com.iflytek.facedemo.VideoDemo.count;
+import static com.iflytek.facedemo.VideoDemo.k;
+import static com.iflytek.facedemo.VideoDemo.leftMap;
+import static com.iflytek.facedemo.VideoDemo.mapArr;
 
 public class FaceUtil {
     public final static int REQUEST_PICTURE_CHOOSE = 1;
@@ -135,9 +139,14 @@ public class FaceUtil {
      * @param frontCamera 是否为前置摄像头，如为前置摄像头需左右对称
      * @param DrawOriRect 可绘制原始框，也可以只画四个角
      */
+
     static public void drawFaceRect(Canvas canvas, FaceRect face, int width, int height, boolean frontCamera, boolean DrawOriRect) {
         if (canvas == null) {
             return;
+        }
+
+        if (k == 9) {
+            k = 0;
         }
 
         Paint paint = new Paint();
@@ -158,52 +167,47 @@ public class FaceUtil {
             paint.setStyle(Style.STROKE);
             canvas.drawRect(rect, paint);
         } else {
-            int drawl = rect.left - len;
-            int drawr = rect.right + len;
-            int drawu = rect.top - len;
-            int drawd = rect.bottom + len;
-
-            canvas.drawLine(drawl, drawd, drawl, drawd - len, paint);
-            canvas.drawLine(drawl, drawd, drawl + len, drawd, paint);
-            canvas.drawLine(drawr, drawd, drawr, drawd - len, paint);
-            canvas.drawLine(drawr, drawd, drawr - len, drawd, paint);
-            canvas.drawLine(drawl, drawu, drawl, drawu + len, paint);
-            canvas.drawLine(drawl, drawu, drawl + len, drawu, paint);
-            canvas.drawLine(drawr, drawu, drawr, drawu + len, paint);
-            canvas.drawLine(drawr, drawu, drawr - len, drawu, paint);
+//            int drawl = rect.left - len;
+//            int drawr = rect.right + len;
+//            int drawu = rect.top - len;
+//            int drawd = rect.bottom + len;
+//
+//            canvas.drawLine(drawl, drawd, drawl, drawd - len, paint);
+//            canvas.drawLine(drawl, drawd, drawl + len, drawd, paint);
+//            canvas.drawLine(drawr, drawd, drawr, drawd - len, paint);
+//            canvas.drawLine(drawr, drawd, drawr - len, drawd, paint);
+//            canvas.drawLine(drawl, drawu, drawl, drawu + len, paint);
+//            canvas.drawLine(drawl, drawu, drawl + len, drawu, paint);
+//            canvas.drawLine(drawr, drawu, drawr, drawu + len, paint);
+//            canvas.drawLine(drawr, drawu, drawr - len, drawu, paint);
         }
 
+
         if (face.point != null) {
+
             for (Point p : face.point) {
                 if (frontCamera) {
                     p.y = width - p.y;
                 }
-                canvas.drawPoint(p.x, p.y, paint);
+//                canvas.drawPoint(p.x, p.y, paint);
             }
-            for(int i=0;i<face.point.length;i++){
-                Log.e("flagtt--",i+","+face.point[i].x+","+face.point[i].y);
+            leftMap = mapArr[k];
+            //-------------------------------------------------
+            Point rnose = new Point(face.point[10].x, face.point[10].y);
+            Point lnose = new Point(face.point[12].x, face.point[12].y);
+            Point tnose = new Point(face.point[18].x, face.point[18].y);
+            float tan = 1.0f * (rnose.y - lnose.y) / (rnose.x - lnose.x);
+            double atan = Math.toDegrees(Math.atan(tan));
+            float fa = leftMap.getHeight() * 1.0f / leftMap.getWidth();
+            float newWidth = 3 * (rnose.x - lnose.x);
+            float newHeight = newWidth * fa;
+            Bitmap map = Bitmap.createScaledBitmap(leftMap, (int) newWidth, (int) newHeight, false);
+            canvas.rotate((float) atan, tnose.x, tnose.y);
+            canvas.drawBitmap(map, tnose.x - map.getWidth() / 2, tnose.y - map.getHeight() / 2, paint);
+            count++;
+            if (count % 5 == 0) {
+                k++;
             }
-//            int leftx = 0;
-//            int rightx = 0;
-//            int lefty = 0;
-//            int righty = 0;
-//            for (int i = 0; i < face.point.length; i++) {
-//                if (frontCamera) {
-//                    face.point[i].y = width - face.point[i].y;
-//                }
-////                canvas.drawPoint(face.point[i].x, face.point[i].y, paint);
-//                if (i == 2) {
-//                    leftx = face.point[i].x;
-//                    lefty = face.point[i].y;
-//                }
-//                if (i == 3) {
-//                    rightx = face.point[i].x;
-//                    righty = face.point[i].y;
-//                    canvas.drawBitmap(rightMap, leftx,lefty*0.95f,paint);
-//                    canvas.drawBitmap(leftMap, rightx-leftMap.getWidth(),righty*0.95f,paint);
-//                }
-//
-//            }
         }
     }
 

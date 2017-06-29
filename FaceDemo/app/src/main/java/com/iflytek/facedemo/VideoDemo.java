@@ -68,13 +68,36 @@ public class VideoDemo extends Activity {
     private int isAlign = 0;
     public static Bitmap leftMap;
     public static Bitmap rightMap;
+    public static Bitmap[] mapArr;
+    public static Bitmap temp;
+    public static int k=0;
+    public static int count=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_demo);
-        leftMap = BitmapFactory.decodeResource(getResources(), R.drawable.leftbow);
-        rightMap = BitmapFactory.decodeResource(getResources(), R.drawable.rightbow);
+        mapArr = new Bitmap[9];
+        leftMap = BitmapFactory.decodeResource(getResources(), R.drawable.nose);
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.middle);
+        mapArr[0] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_left1);
+        mapArr[1] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_left2);
+        mapArr[2] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_left1);
+        mapArr[3] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.middle);
+        mapArr[4] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_right1);
+        mapArr[5] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_right2);
+        mapArr[6] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_right1);
+        mapArr[7] = temp;
+        temp = BitmapFactory.decodeResource(getResources(), R.drawable.middle);
+        mapArr[8] = temp;
+        //---
         initUI();
 
         nv21 = new byte[PREVIEW_WIDTH * PREVIEW_HEIGHT * 2];
