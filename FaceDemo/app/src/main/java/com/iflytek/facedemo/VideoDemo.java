@@ -3,6 +3,9 @@ package com.iflytek.facedemo;
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,15 +14,31 @@ import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PreviewCallback;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
+import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.StreamConfigurationMap;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Process;
+import android.support.annotation.RequiresApi;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
@@ -34,17 +53,28 @@ import android.widget.Toast;
 
 import com.iflytek.cloud.FaceDetector;
 import com.iflytek.cloud.util.Accelerometer;
+import com.iflytek.facedemo.filter.ZipPkmAnimationFilter;
+import com.iflytek.facedemo.open.FrameCallback;
+import com.iflytek.facedemo.open.LessonOneRenderer3;
+import com.iflytek.facedemo.open.Renderer;
+import com.iflytek.facedemo.open.TextureController;
 import com.iflytek.facedemo.util.FaceRect;
 import com.iflytek.facedemo.util.FaceUtil;
 import com.iflytek.facedemo.util.ParseResult;
 
 import java.io.IOException;
+import java.util.Arrays;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
 
 /**
  * 离线视频流检测示例
  * 该业务仅支持离线人脸检测SDK，请开发者前往<a href="http://www.xfyun.cn/">讯飞语音云</a>SDK下载界面，下载对应离线SDK
  */
-public class VideoDemo extends Activity {
+public class VideoDemo extends Activity implements FrameCallback {
     private final static String TAG = VideoDemo.class.getSimpleName();
     private SurfaceView mPreviewSurface;
     private SurfaceView mFaceSurface;
@@ -68,10 +98,19 @@ public class VideoDemo extends Activity {
     private int isAlign = 0;
     public static Bitmap leftMap;
     public static Bitmap rightMap;
+    //-----------
+    private TextureController mController;
+    private int cameraId = 1;
+    private Renderer mRenderer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            mRenderer = new Camera2Renderer();
+//        } else {
+//        }
+        mRenderer = new Camera1Renderer(this);
         setContentView(R.layout.activity_video_demo);
         leftMap = BitmapFactory.decodeResource(getResources(), R.drawable.leftbow);
         rightMap = BitmapFactory.decodeResource(getResources(), R.drawable.rightbow);
@@ -88,17 +127,21 @@ public class VideoDemo extends Activity {
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
+            mController.surfaceDestroyed();
             closeCamera();
         }
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
+            mController.surfaceCreated(holder);
+            mController.setRenderer(mRenderer);
             openCamera();
         }
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                    int height) {
+            mController.surfaceChanged(width, height);
             mScaleMatrix.setScale(width / (float) PREVIEW_HEIGHT, height / (float) PREVIEW_WIDTH);
         }
     };
@@ -116,17 +159,45 @@ public class VideoDemo extends Activity {
         mFaceSurface.setLayoutParams(params);
     }
 
+    protected void onFilterSet(TextureController controller) {
+        ZipPkmAnimationFilter mAniFilter = new ZipPkmAnimationFilter(getResources());
+        mAniFilter.setAnimation("assets/etczip/cc.zip");
+        controller.addFilter(mAniFilter);
+    }
+
     @SuppressLint("ShowToast")
     @SuppressWarnings("deprecation")
     private void initUI() {
         mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
 
+
+        // Check if the system supports OpenGL ES 2.0.
+        final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
+        final boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000;
+
+        mController = new TextureController(VideoDemo.this);
+//            WaterMarkFilter filter=new WaterMarkFilter(getResources());
+//            filter.setWaterMark(BitmapFactory.decodeResource(getResources(),R.mipmap.logo));
+//            filter.setPosition(300,50,300,150);
+//            mController.addFilter(filter);
+        onFilterSet(mController);
+        mController.setFrameCallback(720, 1280, VideoDemo.this);
+
+        if (supportsEs2) {
+
+            // Set the renderer to our demo renderer, defined below.
+//            mGlFace.setRenderer(new Camera1Renderer(this));
+        } else {
+            // This is where you could create an OpenGL ES 1.x compatible
+            // renderer if you wanted to support both ES 1 and ES 2.
+            return;
+        }
         mPreviewSurface.getHolder().addCallback(mPreviewCallback);
         mPreviewSurface.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mFaceSurface.setZOrderOnTop(true);
         mFaceSurface.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-
         // 点击SurfaceView，切换摄相头
         mFaceSurface.setOnClickListener(new OnClickListener() {
 
@@ -193,6 +264,9 @@ public class VideoDemo extends Activity {
     }
 
     private void openCamera() {
+        if (true) {
+            return;
+        }
         if (null != mCamera) {
             return;
         }
@@ -237,13 +311,25 @@ public class VideoDemo extends Activity {
         });
 
         try {
-            mCamera.setPreviewDisplay(mPreviewSurface.getHolder());
+//            mCamera.setPreviewDisplay(mPreviewSurface.getHolder());
+            mCamera.setPreviewTexture(mController.getTexture());
+            mController.getTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+                @Override
+                public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                    mController.requestRender();
+                }
+            });
             mCamera.startPreview();
-        } catch (IOException e) {
+        } catch (
+                IOException e)
+
+        {
             e.printStackTrace();
         }
 
-        if (mFaceDetector == null) {
+        if (mFaceDetector == null)
+
+        {
             /**
              * 离线视频流检测功能需要单独下载支持离线人脸的SDK
              * 请开发者前往语音云官网下载对应SDK
@@ -284,12 +370,14 @@ public class VideoDemo extends Activity {
 
             @Override
             public void run() {
+                Log.e("flag--", "run(VideoDemo.java:370)-->>");
                 while (!mStopTrack) {
                     if (null == nv21) {
                         continue;
                     }
-
+                    Log.e("flag--", "run(VideoDemo.java:377)-->>");
                     synchronized (nv21) {
+                        Log.e("flag--", "run(VideoDemo.java:379)-->>" + nv21.length);
                         System.arraycopy(nv21, 0, buffer, 0, nv21.length);
                     }
 
@@ -302,7 +390,7 @@ public class VideoDemo extends Activity {
                         // SDK中使用0,1,2,3,4分别表示0,90,180,270和360度
                         direction = (4 - direction) % 4;
                     }
-
+                    Log.e("flag--", "run(VideoDemo.java:389)-->>");
                     if (mFaceDetector == null) {
                         /**
                          * 离线视频流检测功能需要单独下载支持离线人脸的SDK
@@ -343,6 +431,7 @@ public class VideoDemo extends Activity {
                                     frontCamera, false);
 
                         }
+                        Log.e("flag--", "run(VideoDemo.java:429)-->>");
                     } else {
                         Log.d(TAG, "faces:0");
                     }
@@ -377,4 +466,200 @@ public class VideoDemo extends Activity {
         mToast.show();
     }
 
+    @Override
+    public void onFrame(byte[] bytes, long time) {
+
+    }
+
+
+    //--------------------------------------
+    private class Camera1Renderer extends LessonOneRenderer3 {
+
+        private Camera mCamera;
+
+        /**
+         * Initialize the model data.
+         *
+         * @param aContext
+         */
+        public Camera1Renderer(Context aContext) {
+            super(aContext);
+        }
+
+        /**
+         * Initialize the model data.
+         * <p>
+         * //         * @param aContext
+         * //
+         */
+//        public Camera1Renderer(Context aContext) {
+//            super(aContext);
+//        }
+        @Override
+        public void onDestroy() {
+            if (mCamera != null) {
+                mCamera.stopPreview();
+                mCamera.release();
+                mCamera = null;
+            }
+        }
+
+        @Override
+        public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+            if (mCamera != null) {
+                mCamera.stopPreview();
+                mCamera.release();
+                mCamera = null;
+            }
+            mCamera = Camera.open(cameraId);
+            mController.setImageDirection(cameraId);
+            Parameters params = mCamera.getParameters();
+            params.setPreviewFormat(ImageFormat.NV21);
+            params.setPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT);
+            mCamera.setParameters(params);
+            Camera.Size size = mCamera.getParameters().getPreviewSize();
+            mController.setDataSize(size.height, size.width);
+            try {
+
+
+                // 设置显示的偏转角度，大部分机器是顺时针90度，某些机器需要按情况设置
+                mCamera.setPreviewCallback(new PreviewCallback() {
+
+                    @Override
+                    public void onPreviewFrame(byte[] data, Camera camera) {
+                        System.arraycopy(data, 0, nv21, 0, data.length);
+                    }
+                });
+                mCamera.setPreviewTexture(mController.getTexture());
+                mController.getTexture().setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+                    @Override
+                    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                        mController.requestRender();
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mCamera.startPreview();
+            super.onSurfaceCreated(gl, config);
+        }
+
+        @Override
+        public void onSurfaceChanged(GL10 gl, int width, int height) {
+            super.onSurfaceChanged(gl, width, height);
+        }
+
+        @Override
+        public void onDrawFrame(GL10 gl) {
+            super.onDrawFrame(gl);
+        }
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private class Camera2Renderer implements Renderer {
+
+        CameraDevice mDevice;
+        CameraManager mCameraManager;
+        private HandlerThread mThread;
+        private Handler mHandler;
+        private Size mPreviewSize;
+
+        Camera2Renderer() {
+            mCameraManager = (CameraManager) getSystemService(CAMERA_SERVICE);
+            mThread = new HandlerThread("camera2 ");
+            mThread.start();
+            mHandler = new Handler(mThread.getLooper());
+        }
+
+        @Override
+        public void onDestroy() {
+            if (mDevice != null) {
+                mDevice.close();
+                mDevice = null;
+            }
+        }
+
+        @Override
+        public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+            try {
+                if (mDevice != null) {
+                    mDevice.close();
+                    mDevice = null;
+                }
+                CameraCharacteristics c = mCameraManager.getCameraCharacteristics(cameraId + "");
+                StreamConfigurationMap map = c.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                Size[] sizes = map.getOutputSizes(SurfaceHolder.class);
+                //自定义规则，选个大小
+                mPreviewSize = sizes[0];
+                mController.setDataSize(mPreviewSize.getHeight(), mPreviewSize.getWidth());
+                mCameraManager.openCamera(cameraId + "", new CameraDevice.StateCallback() {
+                    @Override
+                    public void onOpened(CameraDevice camera) {
+                        mDevice = camera;
+                        try {
+                            Surface surface = new Surface(mController
+                                    .getTexture());
+                            final CaptureRequest.Builder builder = mDevice.createCaptureRequest
+                                    (TEMPLATE_PREVIEW);
+                            builder.addTarget(surface);
+                            mController.getTexture().setDefaultBufferSize(
+                                    mPreviewSize.getWidth(), mPreviewSize.getHeight());
+                            mDevice.createCaptureSession(Arrays.asList(surface), new
+                                    CameraCaptureSession.StateCallback() {
+                                        @Override
+                                        public void onConfigured(CameraCaptureSession session) {
+                                            try {
+                                                session.setRepeatingRequest(builder.build(), new CameraCaptureSession.CaptureCallback() {
+                                                    @Override
+                                                    public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request, CaptureResult partialResult) {
+                                                        super.onCaptureProgressed(session, request, partialResult);
+                                                    }
+
+                                                    @Override
+                                                    public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                                                        super.onCaptureCompleted(session, request, result);
+                                                        mController.requestRender();
+                                                    }
+                                                }, mHandler);
+                                            } catch (CameraAccessException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onConfigureFailed(CameraCaptureSession session) {
+
+                                        }
+                                    }, mHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onDisconnected(CameraDevice camera) {
+                        mDevice = null;
+                    }
+
+                    @Override
+                    public void onError(CameraDevice camera, int error) {
+
+                    }
+                }, mHandler);
+            } catch (SecurityException | CameraAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onSurfaceChanged(GL10 gl, int width, int height) {
+
+        }
+
+        @Override
+        public void onDrawFrame(GL10 gl) {
+
+        }
+    }
 }
