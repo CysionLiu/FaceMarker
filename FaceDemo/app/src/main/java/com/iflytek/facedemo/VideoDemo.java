@@ -79,9 +79,6 @@ public class VideoDemo extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        registerReceiver(mBatInfoReceiver,filter);
         setContentView(R.layout.activity_video_demo);
 
         initUI();
@@ -108,7 +105,7 @@ public class VideoDemo extends Activity {
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                    int height) {
-            Log.e("flag--","surfaceChanged(VideoDemo.java:111)-->>");
+            Log.e("flag--", "surfaceChanged(VideoDemo.java:111)-->>");
 
             mScaleMatrix.setScale(width / (float) PREVIEW_HEIGHT, height / (float) PREVIEW_WIDTH);
         }
@@ -329,6 +326,8 @@ public class VideoDemo extends Activity {
 
                     // 获取手机朝向，返回值0,1,2,3分别表示0,90,180和270度
                     int direction = Accelerometer.getDirection();
+
+
                     boolean frontCamera = (CameraInfo.CAMERA_FACING_FRONT == mCameraId);
                     // 前置摄像头预览显示的是镜像，需要将手机朝向换算成摄相头视角下的朝向。
                     // 转换公式：a' = (360 - a)%360，a为人眼视角下的朝向（单位：角度）
@@ -365,7 +364,7 @@ public class VideoDemo extends Activity {
                         continue;
                     }
 
-                    if (null != faces && frontCamera == (CameraInfo.CAMERA_FACING_FRONT == mCameraId)) {
+                    if (null != faces && frontCamera == (CameraInfo.CAMERA_FACING_FRONT == mCameraId)&&direction==3) {
                         for (FaceRect face : faces) {
                             face.bound = FaceUtil.RotateDeg90(face.bound, PREVIEW_WIDTH, PREVIEW_HEIGHT);
                             if (face.point != null) {
@@ -412,18 +411,8 @@ public class VideoDemo extends Activity {
         mToast.setText(str);
         mToast.show();
     }
-    
-    
-    
-    //--------------------
-    private final BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(final Context context, final Intent intent) {
-            final String action = intent.getAction();
-            if(Intent.ACTION_SCREEN_OFF.equals(action)) {
-            }else if(Intent.ACTION_SCREEN_ON.equals(action)){
-            }
-        }
-    };
+
+
+
 
 }
