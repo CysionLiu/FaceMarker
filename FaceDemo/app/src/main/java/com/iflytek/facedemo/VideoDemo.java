@@ -4,7 +4,6 @@ import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -64,13 +63,8 @@ public class VideoDemo extends Activity {
     private boolean mStopTrack;
     private Toast mToast;
     private long mLastClickTime;
-    private int isAlign = 0;
-    public static Bitmap noseMap;
-    public static Bitmap headMap;
-    public static Bitmap temp;
-    public static int k = 0;
-    public static int headIndex = 0;
-    public static int count = 0;
+    private int isAlign = 1;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,8 +95,6 @@ public class VideoDemo extends Activity {
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                    int height) {
-            Log.e("flag--", "surfaceChanged(VideoDemo.java:111)-->>");
-
             mScaleMatrix.setScale(width / (float) PREVIEW_HEIGHT, height / (float) PREVIEW_WIDTH);
         }
     };
@@ -407,8 +399,4 @@ public class VideoDemo extends Activity {
         mToast.setText(str);
         mToast.show();
     }
-
-
-
-
 }

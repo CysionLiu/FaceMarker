@@ -16,9 +16,11 @@ import java.util.List;
 
 public class BitmapLoader {
     private static volatile BitmapLoader instance;
+    public static Bitmap noseImg;
+    public static Bitmap headImg;
     private static Context mContext;
-    private List<Bitmap> noseMaps = new ArrayList<>();
-    private List<Bitmap> headMaps = new ArrayList<>();
+    private List<Bitmap> noseImgs = new ArrayList<>();
+    private List<Bitmap> headImgs = new ArrayList<>();
 
     private BitmapLoader() {
 
@@ -32,6 +34,7 @@ public class BitmapLoader {
         return instance;
     }
 
+    //从asset里读取文件
     public Bitmap loadAssets(String fileName) {
         Bitmap image = null;
         AssetManager am = mContext.getAssets();
@@ -46,34 +49,37 @@ public class BitmapLoader {
         return image;
     }
 
-    public List<Bitmap> getNoseMaps() {
-        if (noseMaps.size()>1) {
-            return noseMaps;
+    //获得nose贴图包
+    public List<Bitmap> getNoseImgs() {
+        if (noseImgs.size() > 1) {
+            return noseImgs;
         }
         String[] paths = null;
         try {
             paths = mContext.getAssets().list("huzi");
             for (int i = 0; i < paths.length; i++) {
-                noseMaps.add(loadAssets("huzi/"+paths[i]));
+                noseImgs.add(loadAssets("huzi/" + paths[i]));
             }
         } catch (IOException aE) {
             aE.printStackTrace();
         }
-        return noseMaps;
+        return noseImgs;
     }
-    public List<Bitmap> getHeadMaps() {
-        if (headMaps.size()>1) {
-            return headMaps;
+
+    //获得头部贴图包
+    public List<Bitmap> getHeadImgs() {
+        if (headImgs.size() > 1) {
+            return headImgs;
         }
         String[] paths = null;
         try {
             paths = mContext.getAssets().list("ear");
             for (int i = 0; i < paths.length; i++) {
-                headMaps.add(loadAssets("ear/"+paths[i]));
+                headImgs.add(loadAssets("ear/" + paths[i]));
             }
         } catch (IOException aE) {
             aE.printStackTrace();
         }
-        return headMaps;
+        return headImgs;
     }
 }
