@@ -3,9 +3,12 @@ package com.iflytek.facedemo;
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -15,7 +18,6 @@ import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PreviewCallback;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.DisplayMetrics;
@@ -41,16 +43,13 @@ import com.iflytek.facedemo.util.ParseResult;
 
 import java.io.IOException;
 
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-
 /**
  * 离线视频流检测示例
  * 该业务仅支持离线人脸检测SDK，请开发者前往<a href="http://www.xfyun.cn/">讯飞语音云</a>SDK下载界面，下载对应离线SDK
  */
 public class VideoDemo extends Activity {
     private final static String TAG = VideoDemo.class.getSimpleName();
-    private GLSurfaceView mPreviewSurface;
+    private SurfaceView mPreviewSurface;
     private SurfaceView mFaceSurface;
     private Camera mCamera;
     private int mCameraId = CameraInfo.CAMERA_FACING_FRONT;
@@ -70,38 +69,21 @@ public class VideoDemo extends Activity {
     private Toast mToast;
     private long mLastClickTime;
     private int isAlign = 0;
-    public static Bitmap leftMap;
-    public static Bitmap rightMap;
-    public static Bitmap[] mapArr;
+    public static Bitmap noseMap;
+    public static Bitmap headMap;
     public static Bitmap temp;
     public static int k = 0;
+    public static int headIndex = 0;
     public static int count = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+        registerReceiver(mBatInfoReceiver,filter);
         setContentView(R.layout.activity_video_demo);
-        mapArr = new Bitmap[9];
-        leftMap = BitmapFactory.decodeResource(getResources(), R.drawable.nose);
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.middle);
-        mapArr[0] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_left1);
-        mapArr[1] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_left2);
-        mapArr[2] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_left1);
-        mapArr[3] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.middle);
-        mapArr[4] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_right1);
-        mapArr[5] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_right2);
-        mapArr[6] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.nose_right1);
-        mapArr[7] = temp;
-        temp = BitmapFactory.decodeResource(getResources(), R.drawable.middle);
-        mapArr[8] = temp;
-        //---
+
         initUI();
 
         nv21 = new byte[PREVIEW_WIDTH * PREVIEW_HEIGHT * 2];
@@ -126,6 +108,8 @@ public class VideoDemo extends Activity {
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                    int height) {
+            Log.e("flag--","surfaceChanged(VideoDemo.java:111)-->>");
+
             mScaleMatrix.setScale(width / (float) PREVIEW_HEIGHT, height / (float) PREVIEW_WIDTH);
         }
     };
@@ -146,24 +130,24 @@ public class VideoDemo extends Activity {
     @SuppressLint("ShowToast")
     @SuppressWarnings("deprecation")
     private void initUI() {
-        mPreviewSurface = (GLSurfaceView) findViewById(R.id.sfv_preview);
+        mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
-        mPreviewSurface.setRenderer(new GLSurfaceView.Renderer() {
-            @Override
-            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-
-            }
-
-            @Override
-            public void onSurfaceChanged(GL10 gl, int width, int height) {
-
-            }
-
-            @Override
-            public void onDrawFrame(GL10 gl) {
-
-            }
-        });
+//        mPreviewSurface.setRenderer(new GLSurfaceView.Renderer() {
+//            @Override
+//            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+//
+//            }
+//
+//            @Override
+//            public void onSurfaceChanged(GL10 gl, int width, int height) {
+//
+//            }
+//
+//            @Override
+//            public void onDrawFrame(GL10 gl) {
+//
+//            }
+//        });
         mPreviewSurface.getHolder().addCallback(mPreviewCallback);
         mPreviewSurface.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mFaceSurface.setZOrderOnTop(true);
@@ -235,9 +219,11 @@ public class VideoDemo extends Activity {
     }
 
     private void openCamera() {
+        Log.e("flag--", "openCamera(VideoDemo.java:242)-->>");
         if (null != mCamera) {
             return;
         }
+        Log.e("flag--", "openCamera(VideoDemo.java:246)-->>");
 
         if (!checkCameraPermission()) {
             showTip("摄像头权限未打开，请打开后再试");
@@ -252,11 +238,13 @@ public class VideoDemo extends Activity {
 
         try {
             mCamera = Camera.open(mCameraId);
+            Log.e("flag--", "openCamera(VideoDemo.java:261)-->>");
             if (CameraInfo.CAMERA_FACING_FRONT == mCameraId) {
                 showTip("前置摄像头已开启，点击可切换");
             } else {
                 showTip("后置摄像头已开启，点击可切换");
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             closeCamera();
@@ -283,6 +271,7 @@ public class VideoDemo extends Activity {
         try {
             mCamera.setPreviewDisplay(mPreviewSurface.getHolder());
             mCamera.startPreview();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -318,7 +307,8 @@ public class VideoDemo extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-
+        mPreviewSurface.setVisibility(View.VISIBLE);
+        mFaceSurface.setVisibility(View.VISIBLE);
         if (null != mAcc) {
             mAcc.start();
         }
@@ -400,6 +390,8 @@ public class VideoDemo extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        mFaceSurface.setVisibility(View.GONE);
+        mPreviewSurface.setVisibility(View.GONE);
         closeCamera();
         if (null != mAcc) {
             mAcc.stop();
@@ -420,5 +412,18 @@ public class VideoDemo extends Activity {
         mToast.setText(str);
         mToast.show();
     }
+    
+    
+    
+    //--------------------
+    private final BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(final Context context, final Intent intent) {
+            final String action = intent.getAction();
+            if(Intent.ACTION_SCREEN_OFF.equals(action)) {
+            }else if(Intent.ACTION_SCREEN_ON.equals(action)){
+            }
+        }
+    };
 
 }

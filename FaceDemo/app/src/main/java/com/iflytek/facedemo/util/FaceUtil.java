@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static com.iflytek.facedemo.VideoDemo.count;
+import static com.iflytek.facedemo.VideoDemo.headIndex;
+import static com.iflytek.facedemo.VideoDemo.headMap;
 import static com.iflytek.facedemo.VideoDemo.k;
-import static com.iflytek.facedemo.VideoDemo.leftMap;
+import static com.iflytek.facedemo.VideoDemo.noseMap;
 
 public class FaceUtil {
     public final static int REQUEST_PICTURE_CHOOSE = 1;
@@ -145,12 +147,16 @@ public class FaceUtil {
             return;
         }
 
-        List<Bitmap> maps = BitmapLoader.getInstance(aContext).getMaps();
-        if (maps.size() <= 22) {
+        List<Bitmap> noseMaps = BitmapLoader.getInstance(aContext).getNoseMaps();
+        List<Bitmap> headMaps = BitmapLoader.getInstance(aContext).getHeadMaps();
+        if (noseMaps.size() <= 22||headMaps.size()<=17) {
             return;
         }
-        if (k == maps.size()) {
+        if (k == noseMaps.size()) {
             k = 0;
+        }
+        if(headIndex==headMaps.size()){
+            headIndex=0;
         }
         Paint paint = new Paint();
         paint.setColor(Color.rgb(255, 203, 15));
@@ -194,21 +200,41 @@ public class FaceUtil {
                 }
 //                canvas.drawPoint(p.x, p.y, paint);
             }
-            leftMap = maps.get(k);
-            //-------------------------------------------------
+            noseMap = noseMaps.get(k);
+            headMap = headMaps.get(headIndex);
+            canvas.save();
+            //----------------------------------鼻子---------------
             Point rnose = new Point(face.point[10].x, face.point[10].y);
             Point lnose = new Point(face.point[12].x, face.point[12].y);
             Point tnose = new Point(face.point[18].x, face.point[18].y);
             float tan = 1.0f * (rnose.y - lnose.y) / (rnose.x - lnose.x);
             double atan = Math.toDegrees(Math.atan(tan));
-            float fa = leftMap.getHeight() * 1.0f / leftMap.getWidth();
+            float fa = noseMap.getHeight() * 1.0f / noseMap.getWidth();
             float newWidth = 5 * (rnose.x - lnose.x);
             float newHeight = newWidth * fa;
-            Bitmap map = Bitmap.createScaledBitmap(leftMap, (int) newWidth, (int) newHeight, false);
+            Bitmap map = Bitmap.createScaledBitmap(noseMap, (int) newWidth, (int) newHeight, false);
             canvas.rotate((float) atan, tnose.x, tnose.y);
             canvas.drawBitmap(map, tnose.x - map.getWidth() / 2, tnose.y - map.getHeight() / 2, paint);
+           canvas.restore();
+            //------------增加两个额头点
+            MyPoint rEye = new MyPoint(face.point[7].x, face.point[7].y);
+            MyPoint lEye = new MyPoint(face.point[8].x, face.point[8].y);
+            float noseLength = (float) Math.sqrt((rEye.x - rnose.x)*(rEye.x - rnose.x)+(rEye.y - rnose.y)*(rEye.y - rnose.y));
+            MyPoint lHead = MathUtil.getThirdPointLeft(rEye,lEye,noseLength);
+            MyPoint rHead = MathUtil.getThirdPointRight(rEye,lEye,noseLength);
+            MyPoint mHead = new MyPoint((rHead.x+lHead.x)/2,(rHead.y+lHead.y)/2);
+            float tan2 = 1.0f * (rEye.y - lEye.y) / (rEye.x - lEye.x);
+            double atan2 = Math.toDegrees(Math.atan(tan2));
+            float fa2 = headMap.getHeight() * 1.0f / headMap.getWidth();
+            float newWidth2 = (float) (5.6 * noseLength);
+            float newHeight2 = newWidth2 * fa2;
+            Bitmap map2 = Bitmap.createScaledBitmap(headMap, (int) newWidth2, (int) newHeight2, false);
+            canvas.rotate((float) atan2, mHead.x, mHead.y);
+            canvas.drawBitmap(map2, mHead.x - map2.getWidth() / 2, mHead.y - map2.getHeight() / 2, paint);
+
             count++;
             k++;
+            headIndex++;
             if (count % 2 == 0) {
             }
         }
