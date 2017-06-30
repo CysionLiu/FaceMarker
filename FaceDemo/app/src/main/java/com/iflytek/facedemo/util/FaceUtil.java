@@ -21,12 +21,12 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static com.iflytek.facedemo.VideoDemo.count;
 import static com.iflytek.facedemo.VideoDemo.k;
 import static com.iflytek.facedemo.VideoDemo.leftMap;
-import static com.iflytek.facedemo.VideoDemo.mapArr;
 
 public class FaceUtil {
     public final static int REQUEST_PICTURE_CHOOSE = 1;
@@ -140,15 +140,18 @@ public class FaceUtil {
      * @param DrawOriRect 可绘制原始框，也可以只画四个角
      */
 
-    static public void drawFaceRect(Canvas canvas, FaceRect face, int width, int height, boolean frontCamera, boolean DrawOriRect) {
+    static public void drawFaceRect(Context aContext, Canvas canvas, FaceRect face, int width, int height, boolean frontCamera, boolean DrawOriRect) {
         if (canvas == null) {
             return;
         }
 
-        if (k == 9) {
+        List<Bitmap> maps = BitmapLoader.getInstance(aContext).getMaps();
+        if (maps.size() <= 22) {
+            return;
+        }
+        if (k == maps.size()) {
             k = 0;
         }
-
         Paint paint = new Paint();
         paint.setColor(Color.rgb(255, 203, 15));
         int len = (face.bound.bottom - face.bound.top) / 8;
@@ -191,7 +194,7 @@ public class FaceUtil {
                 }
 //                canvas.drawPoint(p.x, p.y, paint);
             }
-            leftMap = mapArr[k];
+            leftMap = maps.get(k);
             //-------------------------------------------------
             Point rnose = new Point(face.point[10].x, face.point[10].y);
             Point lnose = new Point(face.point[12].x, face.point[12].y);
@@ -199,14 +202,14 @@ public class FaceUtil {
             float tan = 1.0f * (rnose.y - lnose.y) / (rnose.x - lnose.x);
             double atan = Math.toDegrees(Math.atan(tan));
             float fa = leftMap.getHeight() * 1.0f / leftMap.getWidth();
-            float newWidth = 3 * (rnose.x - lnose.x);
+            float newWidth = 5 * (rnose.x - lnose.x);
             float newHeight = newWidth * fa;
             Bitmap map = Bitmap.createScaledBitmap(leftMap, (int) newWidth, (int) newHeight, false);
             canvas.rotate((float) atan, tnose.x, tnose.y);
             canvas.drawBitmap(map, tnose.x - map.getWidth() / 2, tnose.y - map.getHeight() / 2, paint);
             count++;
-            if (count % 5 == 0) {
-                k++;
+            k++;
+            if (count % 2 == 0) {
             }
         }
     }

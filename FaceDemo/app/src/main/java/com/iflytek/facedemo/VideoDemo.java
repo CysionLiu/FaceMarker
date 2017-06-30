@@ -15,6 +15,7 @@ import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PreviewCallback;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.DisplayMetrics;
@@ -40,13 +41,16 @@ import com.iflytek.facedemo.util.ParseResult;
 
 import java.io.IOException;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 /**
  * 离线视频流检测示例
  * 该业务仅支持离线人脸检测SDK，请开发者前往<a href="http://www.xfyun.cn/">讯飞语音云</a>SDK下载界面，下载对应离线SDK
  */
 public class VideoDemo extends Activity {
     private final static String TAG = VideoDemo.class.getSimpleName();
-    private SurfaceView mPreviewSurface;
+    private GLSurfaceView mPreviewSurface;
     private SurfaceView mFaceSurface;
     private Camera mCamera;
     private int mCameraId = CameraInfo.CAMERA_FACING_FRONT;
@@ -70,8 +74,8 @@ public class VideoDemo extends Activity {
     public static Bitmap rightMap;
     public static Bitmap[] mapArr;
     public static Bitmap temp;
-    public static int k=0;
-    public static int count=0;
+    public static int k = 0;
+    public static int count = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,9 +146,24 @@ public class VideoDemo extends Activity {
     @SuppressLint("ShowToast")
     @SuppressWarnings("deprecation")
     private void initUI() {
-        mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
+        mPreviewSurface = (GLSurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
+        mPreviewSurface.setRenderer(new GLSurfaceView.Renderer() {
+            @Override
+            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 
+            }
+
+            @Override
+            public void onSurfaceChanged(GL10 gl, int width, int height) {
+
+            }
+
+            @Override
+            public void onDrawFrame(GL10 gl) {
+
+            }
+        });
         mPreviewSurface.getHolder().addCallback(mPreviewCallback);
         mPreviewSurface.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mFaceSurface.setZOrderOnTop(true);
@@ -246,6 +265,8 @@ public class VideoDemo extends Activity {
 
         Parameters params = mCamera.getParameters();
         params.setPreviewFormat(ImageFormat.NV21);
+        params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        params.setFlashMode(Parameters.FLASH_MODE_AUTO);
         params.setPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT);
         mCamera.setParameters(params);
 
@@ -362,7 +383,7 @@ public class VideoDemo extends Activity {
                                     face.point[i] = FaceUtil.RotateDeg90(face.point[i], PREVIEW_WIDTH, PREVIEW_HEIGHT);
                                 }
                             }
-                            FaceUtil.drawFaceRect(canvas, face, PREVIEW_WIDTH, PREVIEW_HEIGHT,
+                            FaceUtil.drawFaceRect(VideoDemo.this, canvas, face, PREVIEW_WIDTH, PREVIEW_HEIGHT,
                                     frontCamera, false);
 
                         }
