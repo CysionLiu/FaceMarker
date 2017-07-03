@@ -169,9 +169,6 @@ public class VideoDemo extends Activity implements FrameCallback {
     }
 
     protected void onFilterSet(TextureController controller) {
-//        ZipPkmAnimationFilter mAniFilter = new ZipPkmAnimationFilter(getResources());
-//        mAniFilter.setAnimation("assets/etczip/cc.zip");
-//        controller.addFilter(mAniFilter);
         mLookupFilter=new LookupFilter(getResources());
         mLookupFilter.setMaskImage("lookup/purity.png");
         mLookupFilter.setIntensity(0.0f);
