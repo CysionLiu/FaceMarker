@@ -15,19 +15,26 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
+import android.support.annotation.NonNull;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Pattern;
+
+import static com.iflytek.facedemo.util.BitmapLoader.headImg;
+import static com.iflytek.facedemo.util.BitmapLoader.noseImg;
 
 public class FaceUtil {
     public final static int REQUEST_PICTURE_CHOOSE = 1;
     public final static int REQUEST_CAMERA_IMAGE = 2;
     public final static int REQUEST_CROP_IMAGE = 3;
+    public static int noseIndex = 0;
+    public static int headIndex = 0;
+    public static int count = 0;
 
     /***
      * 裁剪图片
@@ -135,11 +142,22 @@ public class FaceUtil {
      * @param frontCamera 是否为前置摄像头，如为前置摄像头需左右对称
      * @param DrawOriRect 可绘制原始框，也可以只画四个角
      */
-    static public void drawFaceRect(Canvas canvas, FaceRect face, int width, int height, boolean frontCamera, boolean DrawOriRect) {
+
+    static public void drawFaceRect(Context aContext, Canvas canvas, FaceRect face, int width, int height, boolean frontCamera, boolean DrawOriRect) {
         if (canvas == null) {
             return;
         }
-
+        List<Bitmap> noseImgs = BitmapLoader.getInstance(aContext).getNoseImgs();
+        List<Bitmap> headImgs = BitmapLoader.getInstance(aContext).getHeadImgs();
+        if (noseImgs.size() <= 22 || headImgs.size() <= 17) {
+            return;
+        }
+        if (noseIndex == noseImgs.size()) {
+            noseIndex = 0;
+        }
+        if (headIndex == headImgs.size()) {
+            headIndex = 0;
+        }
         Paint paint = new Paint();
         paint.setColor(Color.rgb(255, 203, 15));
         int len = (face.bound.bottom - face.bound.top) / 8;
@@ -158,53 +176,63 @@ public class FaceUtil {
             paint.setStyle(Style.STROKE);
             canvas.drawRect(rect, paint);
         } else {
-            int drawl = rect.left - len;
-            int drawr = rect.right + len;
-            int drawu = rect.top - len;
-            int drawd = rect.bottom + len;
-
-            canvas.drawLine(drawl, drawd, drawl, drawd - len, paint);
-            canvas.drawLine(drawl, drawd, drawl + len, drawd, paint);
-            canvas.drawLine(drawr, drawd, drawr, drawd - len, paint);
-            canvas.drawLine(drawr, drawd, drawr - len, drawd, paint);
-            canvas.drawLine(drawl, drawu, drawl, drawu + len, paint);
-            canvas.drawLine(drawl, drawu, drawl + len, drawu, paint);
-            canvas.drawLine(drawr, drawu, drawr, drawu + len, paint);
-            canvas.drawLine(drawr, drawu, drawr - len, drawu, paint);
         }
 
         if (face.point != null) {
+
             for (Point p : face.point) {
                 if (frontCamera) {
                     p.y = width - p.y;
                 }
-                canvas.drawPoint(p.x, p.y, paint);
+//                canvas.drawPoint(p.x, p.y, paint);
             }
-            for(int i=0;i<face.point.length;i++){
-                Log.e("flagtt--",i+","+face.point[i].x+","+face.point[i].y);
+            noseImg = noseImgs.get(noseIndex);
+            headImg = headImgs.get(headIndex);
+            //----------------鼻子---------------
+            Point rnose = drawNose(canvas, face, paint);
+            //------------增加两个额头点----------
+            drawHead(canvas, face, paint, rnose);
+            count++;
+            if (count % 3 == 0) {
+                noseIndex++;
+                headIndex++;
             }
-//            int leftx = 0;
-//            int rightx = 0;
-//            int lefty = 0;
-//            int righty = 0;
-//            for (int i = 0; i < face.point.length; i++) {
-//                if (frontCamera) {
-//                    face.point[i].y = width - face.point[i].y;
-//                }
-////                canvas.drawPoint(face.point[i].x, face.point[i].y, paint);
-//                if (i == 2) {
-//                    leftx = face.point[i].x;
-//                    lefty = face.point[i].y;
-//                }
-//                if (i == 3) {
-//                    rightx = face.point[i].x;
-//                    righty = face.point[i].y;
-//                    canvas.drawBitmap(rightMap, leftx,lefty*0.95f,paint);
-//                    canvas.drawBitmap(leftMap, rightx-leftMap.getWidth(),righty*0.95f,paint);
-//                }
-//
-//            }
         }
+    }
+
+    private static void drawHead(Canvas canvas, FaceRect face, Paint aPaint, Point aRnose) {
+        MyPoint rEye = new MyPoint(face.point[7].x, face.point[7].y);
+        MyPoint lEye = new MyPoint(face.point[8].x, face.point[8].y);
+        float noseLength = (float) Math.sqrt((rEye.x - aRnose.x) * (rEye.x - aRnose.x) + (rEye.y - aRnose.y) * (rEye.y - aRnose.y));
+        MyPoint lHead = MathUtil.getThirdPointLeft(rEye, lEye, noseLength);
+        MyPoint rHead = MathUtil.getThirdPointRight(rEye, lEye, noseLength);
+        MyPoint mHead = new MyPoint((rHead.x + lHead.x) / 2, (rHead.y + lHead.y) / 2);
+        float tan2 = 1.0f * (rEye.y - lEye.y) / (rEye.x - lEye.x);
+        double atan2 = Math.toDegrees(Math.atan(tan2));
+        float fa2 = headImg.getHeight() * 1.0f / headImg.getWidth();
+        float newWidth2 = (float) (5.6 * noseLength);
+        float newHeight2 = newWidth2 * fa2;
+        Bitmap map2 = Bitmap.createScaledBitmap(headImg, (int) newWidth2, (int) newHeight2, false);
+        canvas.rotate((float) atan2, mHead.x, mHead.y);
+        canvas.drawBitmap(map2, mHead.x - map2.getWidth() / 2, mHead.y - map2.getHeight() / 2, aPaint);
+    }
+
+    @NonNull
+    private static Point drawNose(Canvas canvas, FaceRect face, Paint aPaint) {
+        canvas.save();
+        Point rnose = new Point(face.point[10].x, face.point[10].y);
+        Point lnose = new Point(face.point[12].x, face.point[12].y);
+        Point tnose = new Point(face.point[18].x, face.point[18].y);
+        float tan = 1.0f * (rnose.y - lnose.y) / (rnose.x - lnose.x);
+        double atan = Math.toDegrees(Math.atan(tan));
+        float fa = noseImg.getHeight() * 1.0f / noseImg.getWidth();
+        float newWidth = 5 * (rnose.x - lnose.x);
+        float newHeight = newWidth * fa;
+        Bitmap map = Bitmap.createScaledBitmap(noseImg, (int) newWidth, (int) newHeight, false);
+        canvas.rotate((float) atan, tnose.x, tnose.y);
+        canvas.drawBitmap(map, tnose.x - map.getWidth() / 2, tnose.y - map.getHeight() / 2, aPaint);
+        canvas.restore();
+        return rnose;
     }
 
     /**

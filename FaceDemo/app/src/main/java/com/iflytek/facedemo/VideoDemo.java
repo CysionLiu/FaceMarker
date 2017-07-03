@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -96,6 +95,7 @@ public class VideoDemo extends Activity implements FrameCallback {
     private Toast mToast;
     private long mLastClickTime;
     private int isAlign = 1;
+
     public static Bitmap leftMap;
     public static Bitmap rightMap;
     //-----------
@@ -108,6 +108,9 @@ public class VideoDemo extends Activity implements FrameCallback {
     private LookupFilter mLookupFilter;
     private Beauty mBeautyFilter;
 
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         System.loadLibrary("msc");
@@ -119,8 +122,7 @@ public class VideoDemo extends Activity implements FrameCallback {
 //        }
         mRenderer = new Camera1Renderer();
         setContentView(R.layout.activity_video_demo);
-        leftMap = BitmapFactory.decodeResource(getResources(), R.drawable.leftbow);
-        rightMap = BitmapFactory.decodeResource(getResources(), R.drawable.rightbow);
+
         initUI();
 
         nv21 = new byte[PREVIEW_WIDTH * PREVIEW_HEIGHT * 2];
@@ -157,7 +159,7 @@ public class VideoDemo extends Activity implements FrameCallback {
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
-        int width = metrics.widthPixels;
+        int width = (int) (metrics.widthPixels*1.05f);
         int height = (int) (width * PREVIEW_WIDTH / (float) PREVIEW_HEIGHT);
         RelativeLayout.LayoutParams params = new LayoutParams(width, height);
         params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -183,6 +185,7 @@ public class VideoDemo extends Activity implements FrameCallback {
     private void initUI() {
         mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
+
         mSeek=(SeekBar) findViewById(R.id.mSeek);
         mSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -225,6 +228,24 @@ public class VideoDemo extends Activity implements FrameCallback {
             // renderer if you wanted to support both ES 1 and ES 2.
             return;
         }
+
+//        mPreviewSurface.setRenderer(new GLSurfaceView.Renderer() {
+//            @Override
+//            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+//
+//            }
+//
+//            @Override
+//            public void onSurfaceChanged(GL10 gl, int width, int height) {
+//
+//            }
+//
+//            @Override
+//            public void onDrawFrame(GL10 gl) {
+//
+//            }
+//        });
+
         mPreviewSurface.getHolder().addCallback(mPreviewCallback);
         mPreviewSurface.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mFaceSurface.setZOrderOnTop(true);
@@ -320,6 +341,7 @@ public class VideoDemo extends Activity implements FrameCallback {
             } else {
                 showTip("后置摄像头已开启，点击可切换");
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             closeCamera();
@@ -328,6 +350,8 @@ public class VideoDemo extends Activity implements FrameCallback {
 
         Parameters params = mCamera.getParameters();
         params.setPreviewFormat(ImageFormat.NV21);
+        params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        params.setFlashMode(Parameters.FLASH_MODE_AUTO);
         params.setPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT);
         mCamera.setParameters(params);
 
@@ -351,11 +375,13 @@ public class VideoDemo extends Activity implements FrameCallback {
                 }
             });
             mCamera.startPreview();
+
         } catch (
                 IOException e)
 
         {
-            e.printStackTrace();
+
+
         }
 
         if (mFaceDetector == null)
@@ -391,7 +417,8 @@ public class VideoDemo extends Activity implements FrameCallback {
     @Override
     protected void onResume() {
         super.onResume();
-
+        mPreviewSurface.setVisibility(View.VISIBLE);
+        mFaceSurface.setVisibility(View.VISIBLE);
         if (null != mAcc) {
             mAcc.start();
         }
@@ -401,19 +428,18 @@ public class VideoDemo extends Activity implements FrameCallback {
 
             @Override
             public void run() {
-                Log.e("flag--", "run(VideoDemo.java:370)-->>");
                 while (!mStopTrack) {
                     if (null == nv21) {
                         continue;
                     }
-                    Log.e("flag--", "run(VideoDemo.java:377)-->>");
                     synchronized (nv21) {
-                        Log.e("flag--", "run(VideoDemo.java:379)-->>" + nv21.length);
                         System.arraycopy(nv21, 0, buffer, 0, nv21.length);
                     }
 
                     // 获取手机朝向，返回值0,1,2,3分别表示0,90,180和270度
                     int direction = Accelerometer.getDirection();
+
+
                     boolean frontCamera = (CameraInfo.CAMERA_FACING_FRONT == mCameraId);
                     // 前置摄像头预览显示的是镜像，需要将手机朝向换算成摄相头视角下的朝向。
                     // 转换公式：a' = (360 - a)%360，a为人眼视角下的朝向（单位：角度）
@@ -431,7 +457,6 @@ public class VideoDemo extends Activity implements FrameCallback {
                         showTip("创建对象失败，请确认 libmsc.so 放置正确，\n 且有调用 createUtility 进行初始化");
                         break;
                     }
-
                     String result = mFaceDetector.trackNV21(buffer, PREVIEW_WIDTH, PREVIEW_HEIGHT, isAlign, direction);
                     Log.d(TAG, "result:" + result);
 
@@ -450,7 +475,7 @@ public class VideoDemo extends Activity implements FrameCallback {
                         continue;
                     }
 
-                    if (null != faces && frontCamera == (CameraInfo.CAMERA_FACING_FRONT == mCameraId)) {
+                    if (null != faces && frontCamera == (CameraInfo.CAMERA_FACING_FRONT == mCameraId) && direction == 3) {
                         for (FaceRect face : faces) {
                             face.bound = FaceUtil.RotateDeg90(face.bound, PREVIEW_WIDTH, PREVIEW_HEIGHT);
                             if (face.point != null) {
@@ -458,11 +483,10 @@ public class VideoDemo extends Activity implements FrameCallback {
                                     face.point[i] = FaceUtil.RotateDeg90(face.point[i], PREVIEW_WIDTH, PREVIEW_HEIGHT);
                                 }
                             }
-                            FaceUtil.drawFaceRect(canvas, face, PREVIEW_WIDTH, PREVIEW_HEIGHT,
+                            FaceUtil.drawFaceRect(VideoDemo.this, canvas, face, PREVIEW_WIDTH, PREVIEW_HEIGHT,
                                     frontCamera, false);
 
                         }
-                        Log.e("flag--", "run(VideoDemo.java:429)-->>");
                     } else {
                         Log.d(TAG, "faces:0");
                     }
@@ -476,6 +500,8 @@ public class VideoDemo extends Activity implements FrameCallback {
     @Override
     protected void onPause() {
         super.onPause();
+        mFaceSurface.setVisibility(View.GONE);
+        mPreviewSurface.setVisibility(View.GONE);
         closeCamera();
         if (null != mAcc) {
             mAcc.stop();
@@ -508,22 +534,6 @@ public class VideoDemo extends Activity implements FrameCallback {
 
         private Camera mCamera;
 
-        /**
-         * Initialize the model data.
-         *
-         * @param aContext
-         */
-
-
-        /**
-         * Initialize the model data.
-         * <p>
-         * //         * @param aContext
-         * //
-         */
-//        public Camera1Renderer(Context aContext) {
-//            super(aContext);
-//        }
         @Override
         public void onDestroy() {
             if (mCamera != null) {

@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
     
-	<SurfaceView 
+	<SurfaceView
 	    android:id="@+id/sfv_preview"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"/>
@@ -13,6 +13,7 @@
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"/>
 
+
 	<android.support.v7.widget.AppCompatSeekBar
 		android:layout_margin="20dp"
 		android:id="@+id/mSeek"
@@ -21,6 +22,7 @@
 		android:layout_width="match_parent"
 		android:layout_height="30dp"/>
     
+
     <RadioGroup
 		android:visibility="gone"
         android:id="@+id/align_mode"
