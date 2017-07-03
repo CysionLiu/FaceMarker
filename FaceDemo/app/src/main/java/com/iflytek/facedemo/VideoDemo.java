@@ -103,7 +103,7 @@ public class VideoDemo extends Activity {
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
-        int width = metrics.widthPixels;
+        int width = (int) (metrics.widthPixels*1.05f);
         int height = (int) (width * PREVIEW_WIDTH / (float) PREVIEW_HEIGHT);
         RelativeLayout.LayoutParams params = new LayoutParams(width, height);
         params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -204,11 +204,9 @@ public class VideoDemo extends Activity {
     }
 
     private void openCamera() {
-        Log.e("flag--", "openCamera(VideoDemo.java:242)-->>");
         if (null != mCamera) {
             return;
         }
-        Log.e("flag--", "openCamera(VideoDemo.java:246)-->>");
 
         if (!checkCameraPermission()) {
             showTip("摄像头权限未打开，请打开后再试");
@@ -223,7 +221,6 @@ public class VideoDemo extends Activity {
 
         try {
             mCamera = Camera.open(mCameraId);
-            Log.e("flag--", "openCamera(VideoDemo.java:261)-->>");
             if (CameraInfo.CAMERA_FACING_FRONT == mCameraId) {
                 showTip("前置摄像头已开启，点击可切换");
             } else {
@@ -333,7 +330,6 @@ public class VideoDemo extends Activity {
                         showTip("创建对象失败，请确认 libmsc.so 放置正确，\n 且有调用 createUtility 进行初始化");
                         break;
                     }
-
                     String result = mFaceDetector.trackNV21(buffer, PREVIEW_WIDTH, PREVIEW_HEIGHT, isAlign, direction);
                     Log.d(TAG, "result:" + result);
 
@@ -352,7 +348,7 @@ public class VideoDemo extends Activity {
                         continue;
                     }
 
-                    if (null != faces && frontCamera == (CameraInfo.CAMERA_FACING_FRONT == mCameraId)&&direction==3) {
+                    if (null != faces && frontCamera == (CameraInfo.CAMERA_FACING_FRONT == mCameraId) && direction == 3) {
                         for (FaceRect face : faces) {
                             face.bound = FaceUtil.RotateDeg90(face.bound, PREVIEW_WIDTH, PREVIEW_HEIGHT);
                             if (face.point != null) {

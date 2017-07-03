@@ -12,9 +12,7 @@
 	    android:id="@+id/sfv_face"
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"/>
-	
-	
-    
+
     <RadioGroup
 		android:visibility="gone"
         android:id="@+id/align_mode"
