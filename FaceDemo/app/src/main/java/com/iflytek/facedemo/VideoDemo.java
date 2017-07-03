@@ -37,26 +37,25 @@ import android.support.annotation.RequiresApi;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
-import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnTouchListener;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.iflytek.cloud.FaceDetector;
 import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.util.Accelerometer;
-import com.iflytek.facedemo.filter.ZipPkmAnimationFilter;
+import com.iflytek.facedemo.filter.Beauty;
+import com.iflytek.facedemo.filter.LookupFilter;
 import com.iflytek.facedemo.open.FrameCallback;
-import com.iflytek.facedemo.open.LessonOneRenderer3;
 import com.iflytek.facedemo.open.Renderer;
 import com.iflytek.facedemo.open.TextureController;
 import com.iflytek.facedemo.util.FaceRect;
@@ -96,13 +95,18 @@ public class VideoDemo extends Activity implements FrameCallback {
     private boolean mStopTrack;
     private Toast mToast;
     private long mLastClickTime;
-    private int isAlign = 0;
+    private int isAlign = 1;
     public static Bitmap leftMap;
     public static Bitmap rightMap;
     //-----------
     private TextureController mController;
     private int cameraId = 1;
     private Renderer mRenderer;
+
+    //
+    private SeekBar mSeek;
+    private LookupFilter mLookupFilter;
+    private Beauty mBeautyFilter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,7 +117,7 @@ public class VideoDemo extends Activity implements FrameCallback {
 //            mRenderer = new Camera2Renderer();
 //        } else {
 //        }
-        mRenderer = new Camera1Renderer(this);
+        mRenderer = new Camera1Renderer();
         setContentView(R.layout.activity_video_demo);
         leftMap = BitmapFactory.decodeResource(getResources(), R.drawable.leftbow);
         rightMap = BitmapFactory.decodeResource(getResources(), R.drawable.rightbow);
@@ -163,9 +167,15 @@ public class VideoDemo extends Activity implements FrameCallback {
     }
 
     protected void onFilterSet(TextureController controller) {
-        ZipPkmAnimationFilter mAniFilter = new ZipPkmAnimationFilter(getResources());
-        mAniFilter.setAnimation("assets/etczip/cc.zip");
-        controller.addFilter(mAniFilter);
+//        ZipPkmAnimationFilter mAniFilter = new ZipPkmAnimationFilter(getResources());
+//        mAniFilter.setAnimation("assets/etczip/cc.zip");
+//        controller.addFilter(mAniFilter);
+        mLookupFilter=new LookupFilter(getResources());
+        mLookupFilter.setMaskImage("lookup/purity.png");
+        mLookupFilter.setIntensity(0.0f);
+        controller.addFilter(mLookupFilter);
+        mBeautyFilter=new Beauty(getResources());
+        controller.addFilter(mBeautyFilter);
     }
 
     @SuppressLint("ShowToast")
@@ -173,7 +183,25 @@ public class VideoDemo extends Activity implements FrameCallback {
     private void initUI() {
         mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
+        mSeek=(SeekBar) findViewById(R.id.mSeek);
+        mSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                Log.e("wuwang","process:"+progress);
+                mLookupFilter.setIntensity(progress/100f);
+                mBeautyFilter.setFlag(progress/20+1);
+            }
 
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
 
         // Check if the system supports OpenGL ES 2.0.
         final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
@@ -222,27 +250,27 @@ public class VideoDemo extends Activity implements FrameCallback {
         });
 
         // 长按SurfaceView 500ms后松开，摄相头聚集
-        mFaceSurface.setOnTouchListener(new OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        mLastClickTime = System.currentTimeMillis();
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        if (System.currentTimeMillis() - mLastClickTime > 500) {
-                            mCamera.autoFocus(null);
-                            return true;
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-                return false;
-            }
-        });
+//        mFaceSurface.setOnTouchListener(new OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN:
+//                        mLastClickTime = System.currentTimeMillis();
+//                        break;
+//                    case MotionEvent.ACTION_UP:
+//                        if (System.currentTimeMillis() - mLastClickTime > 500) {
+//                            mCamera.autoFocus(null);
+//                            return true;
+//                        }
+//                        break;
+//
+//                    default:
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
 
         RadioGroup alignGruop = (RadioGroup) findViewById(R.id.align_mode);
         alignGruop.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -476,7 +504,7 @@ public class VideoDemo extends Activity implements FrameCallback {
 
 
     //--------------------------------------
-    private class Camera1Renderer extends LessonOneRenderer3 {
+    private class Camera1Renderer implements Renderer {
 
         private Camera mCamera;
 
@@ -485,9 +513,7 @@ public class VideoDemo extends Activity implements FrameCallback {
          *
          * @param aContext
          */
-        public Camera1Renderer(Context aContext) {
-            super(aContext);
-        }
+
 
         /**
          * Initialize the model data.
@@ -544,17 +570,14 @@ public class VideoDemo extends Activity implements FrameCallback {
                 e.printStackTrace();
             }
             mCamera.startPreview();
-            super.onSurfaceCreated(gl, config);
         }
 
         @Override
         public void onSurfaceChanged(GL10 gl, int width, int height) {
-            super.onSurfaceChanged(gl, width, height);
         }
 
         @Override
         public void onDrawFrame(GL10 gl) {
-            super.onDrawFrame(gl);
         }
 
     }

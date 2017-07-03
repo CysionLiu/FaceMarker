@@ -13,9 +13,16 @@
 	    android:layout_width="match_parent"
 	    android:layout_height="match_parent"/>
 
-	
+	<android.support.v7.widget.AppCompatSeekBar
+		android:layout_margin="20dp"
+		android:id="@+id/mSeek"
+        android:background="#ffffffff"
+		android:layout_alignParentBottom="true"
+		android:layout_width="match_parent"
+		android:layout_height="30dp"/>
     
-    <RadioGroup 
+    <RadioGroup
+		android:visibility="gone"
         android:id="@+id/align_mode"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
