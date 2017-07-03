@@ -52,6 +52,7 @@ import android.widget.RelativeLayout.LayoutParams;
 import android.widget.Toast;
 
 import com.iflytek.cloud.FaceDetector;
+import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.util.Accelerometer;
 import com.iflytek.facedemo.filter.ZipPkmAnimationFilter;
 import com.iflytek.facedemo.open.FrameCallback;
@@ -105,6 +106,8 @@ public class VideoDemo extends Activity implements FrameCallback {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        System.loadLibrary("msc");
+        SpeechUtility.createUtility(this,"appid=594a31fc");
         super.onCreate(savedInstanceState);
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 //            mRenderer = new Camera2Renderer();
