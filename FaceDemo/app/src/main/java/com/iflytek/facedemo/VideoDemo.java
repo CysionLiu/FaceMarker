@@ -7,7 +7,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -33,6 +32,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
 import android.support.annotation.RequiresApi;
+import android.support.v7.widget.SwitchCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -42,6 +42,7 @@ import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.CompoundButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.RelativeLayout;
@@ -57,6 +58,7 @@ import com.iflytek.facedemo.filter.LookupFilter;
 import com.iflytek.facedemo.open.FrameCallback;
 import com.iflytek.facedemo.open.Renderer;
 import com.iflytek.facedemo.open.TextureController;
+import com.iflytek.facedemo.util.BitmapLoader;
 import com.iflytek.facedemo.util.FaceRect;
 import com.iflytek.facedemo.util.FaceUtil;
 import com.iflytek.facedemo.util.ParseResult;
@@ -93,11 +95,8 @@ public class VideoDemo extends Activity implements FrameCallback {
     private FaceDetector mFaceDetector;
     private boolean mStopTrack;
     private Toast mToast;
-    private long mLastClickTime;
     private int isAlign = 1;
 
-    public static Bitmap leftMap;
-    public static Bitmap rightMap;
     //-----------
     private TextureController mController;
     private int cameraId = 1;
@@ -109,12 +108,10 @@ public class VideoDemo extends Activity implements FrameCallback {
     private Beauty mBeautyFilter;
 
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         System.loadLibrary("msc");
-        SpeechUtility.createUtility(this,"appid=594a31fc");
+        SpeechUtility.createUtility(this, "appid=594a31fc");
         super.onCreate(savedInstanceState);
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 //            mRenderer = new Camera2Renderer();
@@ -124,11 +121,44 @@ public class VideoDemo extends Activity implements FrameCallback {
         setContentView(R.layout.activity_video_demo);
 
         initUI();
-
+        setConfig();
         nv21 = new byte[PREVIEW_WIDTH * PREVIEW_HEIGHT * 2];
         buffer = new byte[PREVIEW_WIDTH * PREVIEW_HEIGHT * 2];
         mAcc = new Accelerometer(VideoDemo.this);
         mFaceDetector = FaceDetector.createDetector(VideoDemo.this, null);
+    }
+
+    private void setConfig() {
+        ((SwitchCompat)findViewById(R.id.sw_nose)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                BitmapLoader.noseShow = isChecked;
+            }
+        });
+        ((SwitchCompat)findViewById(R.id.sw_ear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                BitmapLoader.headShow = isChecked;
+            }
+        });
+        ((SwitchCompat)findViewById(R.id.sw_eye)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                BitmapLoader.eyeShow = isChecked;
+            }
+        });
+        ((SwitchCompat)findViewById(R.id.sw_bear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                BitmapLoader.bearShow = isChecked;
+            }
+        });
+        ((SwitchCompat)findViewById(R.id.sw_momuth)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                BitmapLoader.mouthShow = isChecked;
+            }
+        });
     }
 
 
@@ -159,7 +189,7 @@ public class VideoDemo extends Activity implements FrameCallback {
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
-        int width = (int) (metrics.widthPixels*1.05f);
+        int width = (int) (metrics.widthPixels * 1.05f);
         int height = (int) (width * PREVIEW_WIDTH / (float) PREVIEW_HEIGHT);
         RelativeLayout.LayoutParams params = new LayoutParams(width, height);
         params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
@@ -169,11 +199,11 @@ public class VideoDemo extends Activity implements FrameCallback {
     }
 
     protected void onFilterSet(TextureController controller) {
-        mLookupFilter=new LookupFilter(getResources());
+        mLookupFilter = new LookupFilter(getResources());
         mLookupFilter.setMaskImage("lookup/purity.png");
         mLookupFilter.setIntensity(0.0f);
         controller.addFilter(mLookupFilter);
-        mBeautyFilter=new Beauty(getResources());
+        mBeautyFilter = new Beauty(getResources());
         controller.addFilter(mBeautyFilter);
     }
 
@@ -183,13 +213,13 @@ public class VideoDemo extends Activity implements FrameCallback {
         mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
 
-        mSeek=(SeekBar) findViewById(R.id.mSeek);
+        mSeek = (SeekBar) findViewById(R.id.mSeek);
         mSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.e("wuwang","process:"+progress);
-                mLookupFilter.setIntensity(progress/100f);
-                mBeautyFilter.setFlag(progress/20+1);
+                Log.e("wuwang", "process:" + progress);
+                mLookupFilter.setIntensity(progress / 100f);
+                mBeautyFilter.setFlag(progress / 20 + 1);
             }
 
             @Override
@@ -226,23 +256,6 @@ public class VideoDemo extends Activity implements FrameCallback {
             return;
         }
 
-//        mPreviewSurface.setRenderer(new GLSurfaceView.Renderer() {
-//            @Override
-//            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-//
-//            }
-//
-//            @Override
-//            public void onSurfaceChanged(GL10 gl, int width, int height) {
-//
-//            }
-//
-//            @Override
-//            public void onDrawFrame(GL10 gl) {
-//
-//            }
-//        });
-
         mPreviewSurface.getHolder().addCallback(mPreviewCallback);
         mPreviewSurface.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         mFaceSurface.setZOrderOnTop(true);
@@ -267,28 +280,6 @@ public class VideoDemo extends Activity implements FrameCallback {
             }
         });
 
-        // 长按SurfaceView 500ms后松开，摄相头聚集
-//        mFaceSurface.setOnTouchListener(new OnTouchListener() {
-//
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                switch (event.getAction()) {
-//                    case MotionEvent.ACTION_DOWN:
-//                        mLastClickTime = System.currentTimeMillis();
-//                        break;
-//                    case MotionEvent.ACTION_UP:
-//                        if (System.currentTimeMillis() - mLastClickTime > 500) {
-//                            mCamera.autoFocus(null);
-//                            return true;
-//                        }
-//                        break;
-//
-//                    default:
-//                        break;
-//                }
-//                return false;
-//            }
-//        });
 
         RadioGroup alignGruop = (RadioGroup) findViewById(R.id.align_mode);
         alignGruop.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -373,25 +364,20 @@ public class VideoDemo extends Activity implements FrameCallback {
             });
             mCamera.startPreview();
 
-        } catch (
-                IOException e)
+        } catch (IOException e)
+            {
+            }
+            if (mFaceDetector == null)
 
-        {
-
-
+            {
+                /**
+                 * 离线视频流检测功能需要单独下载支持离线人脸的SDK
+                 * 请开发者前往语音云官网下载对应SDK
+                 */
+                // 创建单例失败，与 21001 错误为同样原因，参考 http://bbs.xfyun.cn/forum.php?mod=viewthread&tid=9688
+                showTip("创建对象失败，请确认 libmsc.so 放置正确，\n 且有调用 createUtility 进行初始化");
+            }
         }
-
-        if (mFaceDetector == null)
-
-        {
-            /**
-             * 离线视频流检测功能需要单独下载支持离线人脸的SDK
-             * 请开发者前往语音云官网下载对应SDK
-             */
-            // 创建单例失败，与 21001 错误为同样原因，参考 http://bbs.xfyun.cn/forum.php?mod=viewthread&tid=9688
-            showTip("创建对象失败，请确认 libmsc.so 放置正确，\n 且有调用 createUtility 进行初始化");
-        }
-    }
 
     private void closeCamera() {
         if (null != mCamera) {

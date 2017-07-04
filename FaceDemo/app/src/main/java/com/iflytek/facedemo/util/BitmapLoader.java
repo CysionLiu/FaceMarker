@@ -18,9 +18,22 @@ public class BitmapLoader {
     private static volatile BitmapLoader instance;
     public static Bitmap noseImg;
     public static Bitmap headImg;
+    public static Bitmap eyeImg;
+    public static Bitmap bearImg;
+    public static Bitmap mouthImg;
+    //----开关
+    public static boolean noseShow = false;
+    public static boolean headShow = false;
+    public static boolean eyeShow = false;
+    public static boolean bearShow = false;
+    public static boolean mouthShow = false;
+    //
     private static Context mContext;
     private List<Bitmap> noseImgs = new ArrayList<>();
     private List<Bitmap> headImgs = new ArrayList<>();
+    private List<Bitmap> eyeImgs = new ArrayList<>();
+    private List<Bitmap> bearImgs = new ArrayList<>();
+    private List<Bitmap> mouthImgs = new ArrayList<>();
 
     private BitmapLoader() {
 
@@ -81,5 +94,56 @@ public class BitmapLoader {
             aE.printStackTrace();
         }
         return headImgs;
+    }
+
+    //获得眼镜贴图包
+    public List<Bitmap> getEyeImgs() {
+        if (eyeImgs.size() > 1) {
+            return eyeImgs;
+        }
+        String[] paths = null;
+        try {
+            paths = mContext.getAssets().list("eye");
+            for (int i = 0; i < paths.length; i++) {
+                eyeImgs.add(loadAssets("eye/" + paths[i]));
+            }
+        } catch (IOException aE) {
+            aE.printStackTrace();
+        }
+        return eyeImgs;
+    }
+
+    //获得下吧贴图包
+    public List<Bitmap> getBearImgs() {
+        if (bearImgs.size() > 1) {
+            return bearImgs;
+        }
+        String[] paths = null;
+        try {
+            paths = mContext.getAssets().list("bear");
+            for (int i = 0; i < paths.length; i++) {
+                bearImgs.add(loadAssets("bear/" + paths[i]));
+            }
+        } catch (IOException aE) {
+            aE.printStackTrace();
+        }
+        return bearImgs;
+    }
+
+    //获得上嘴巴贴图包
+    public List<Bitmap> getMouthImgs() {
+        if (mouthImgs.size() > 1) {
+            return mouthImgs;
+        }
+        String[] paths = null;
+        try {
+            paths = mContext.getAssets().list("mouth");
+            for (int i = 0; i < paths.length; i++) {
+                mouthImgs.add(loadAssets("mouth/" + paths[i]));
+            }
+        } catch (IOException aE) {
+            aE.printStackTrace();
+        }
+        return mouthImgs;
     }
 }
