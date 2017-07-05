@@ -27,6 +27,12 @@ public class BitmapLoader {
     public static boolean eyeShow = false;
     public static boolean bearShow = false;
     public static boolean mouthShow = false;
+    //图片数量
+    public int noseLength = 22;
+    public int headLength = 17;
+    public int eyeLength = 1;
+    public int bearLength = 1;
+    public int mouthLength = 1;
     //
     private static Context mContext;
     private List<Bitmap> noseImgs = new ArrayList<>();
@@ -36,13 +42,23 @@ public class BitmapLoader {
     private List<Bitmap> mouthImgs = new ArrayList<>();
 
     private BitmapLoader() {
+        //加载图片
+        loadImgs();
+    }
 
+    private void loadImgs() {
+        getBearImgs();
+        getEyeImgs();
+        getHeadImgs();
+        getMouthImgs();
+        getNoseImgs();
     }
 
     public static synchronized BitmapLoader getInstance(Context aContext) {
         if (instance == null) {
-            instance = new BitmapLoader();
             mContext = aContext.getApplicationContext();
+            instance = new BitmapLoader();
+
         }
         return instance;
     }
@@ -145,5 +161,71 @@ public class BitmapLoader {
             aE.printStackTrace();
         }
         return mouthImgs;
+    }
+
+    //图片是否加载完全
+    public boolean isImgsReady() {
+        if (noseImgs.size() <= noseLength ||
+                headImgs.size() <= headLength ||
+                eyeImgs.size() < eyeLength ||
+                bearImgs.size() < bearLength || mouthImgs.size() < mouthLength) {
+            return false;
+        }
+        return true;
+    }
+
+    public void initCurrentImg(FacePart part, int index) {
+        switch (part) {
+            case EYE:
+                if (index >= eyeImgs.size()) {
+                    index = 0;
+                }
+                eyeImg = eyeImgs.get(index);
+                break;
+            case HEAD:
+                if (index >= headImgs.size()) {
+                    index = 0;
+                }
+                headImg = headImgs.get(index);
+                break;
+            case MOUTH:
+                if (index >= mouthImgs.size()) {
+                    index = 0;
+                }
+                mouthImg = mouthImgs.get(index);
+                break;
+            case NOSE:
+                if (index >= noseImgs.size()) {
+                    index = 0;
+                }
+                noseImg = noseImgs.get(index);
+                break;
+            case BOTTOM:
+                if (index >= bearImgs.size()) {
+                    index = 0;
+                }
+                bearImg = bearImgs.get(index);
+                break;
+            default:
+                break;
+        }
+    }
+
+    //释放bitmap资源
+    public void release() {
+        noseImgs.clear();
+        headImgs.clear();
+        eyeImgs.clear();
+        bearImgs.clear();
+        mouthImgs.clear();
+        noseImg = null;
+        headImg = null;
+        bearImg = null;
+        eyeImg = null;
+        mouthImg = null;
+    }
+
+    enum FacePart {
+        EYE, HEAD, MOUTH, NOSE, BOTTOM
     }
 }

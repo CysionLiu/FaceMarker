@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
@@ -15,14 +14,12 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import static com.iflytek.facedemo.util.BitmapLoader.bearImg;
@@ -42,9 +39,6 @@ public class FaceUtil {
     public static int bearIndex = 0;
     public static int mouthIndex = 0;
     public static int count = 0;
-    private static MyPoint sREye;
-    private static MyPoint sLEye;
-    private static double sAtanEyes;
 
     /***
      * 裁剪图片
@@ -157,37 +151,8 @@ public class FaceUtil {
         if (canvas == null) {
             return;
         }
-        List<Bitmap> noseImgs = BitmapLoader.getInstance(aContext).getNoseImgs();
-        List<Bitmap> headImgs = BitmapLoader.getInstance(aContext).getHeadImgs();
-        List<Bitmap> eyeImgs = BitmapLoader.getInstance(aContext).getEyeImgs();
-        List<Bitmap> bearImgs = BitmapLoader.getInstance(aContext).getBearImgs();
-        List<Bitmap> mouthImgs = BitmapLoader.getInstance(aContext).getMouthImgs();
-        if (noseImgs.size() <= 22 || headImgs.size() <= 17 || eyeImgs.size() < 1 || bearImgs.size() < 1 || mouthImgs.size() < 1) {
-            return;
-        }
-        if (noseIndex == noseImgs.size()) {
-            noseIndex = 0;
-        }
-        if (headIndex == headImgs.size()) {
-            headIndex = 0;
-        }
-        if (eyeIndex == eyeImgs.size()) {
-            eyeIndex = 0;
-        }
-        if (bearIndex == bearImgs.size()) {
-            bearIndex = 0;
-        }
-        if (mouthIndex == mouthImgs.size()) {
-            mouthIndex = 0;
-        }
         Paint paint = new Paint();
-        paint.setColor(Color.rgb(255, 203, 15));
-        int len = (face.bound.bottom - face.bound.top) / 8;
-        if (len / 8 >= 2) paint.setStrokeWidth(len / 8);
-        else paint.setStrokeWidth(2);
-
         Rect rect = face.bound;
-
         if (frontCamera) {
             int top = rect.top;
             rect.top = width - rect.bottom;
@@ -197,145 +162,188 @@ public class FaceUtil {
         if (DrawOriRect) {
             paint.setStyle(Style.STROKE);
             canvas.drawRect(rect, paint);
-        } else {
         }
-
         if (face.point != null) {
-
+            //校正点的坐标
             for (Point p : face.point) {
                 if (frontCamera) {
                     p.y = width - p.y;
                 }
-//                canvas.drawPoint(p.x, p.y, paint);
             }
-            noseImg = noseImgs.get(noseIndex);
-            headImg = headImgs.get(headIndex);
-            eyeImg = eyeImgs.get(eyeIndex);
-            bearImg = bearImgs.get(bearIndex);
-            mouthImg = mouthImgs.get(mouthIndex);
+            BitmapLoader loader = BitmapLoader.getInstance(aContext);
+            //若没准备好，则不绘制
+            if (!loader.isImgsReady()) {
+                return;
+            }
+            loader.initCurrentImg(BitmapLoader.FacePart.EYE, eyeIndex);
+            loader.initCurrentImg(BitmapLoader.FacePart.HEAD, headIndex);
+            loader.initCurrentImg(BitmapLoader.FacePart.NOSE, noseIndex);
+            loader.initCurrentImg(BitmapLoader.FacePart.MOUTH, mouthIndex);
+            loader.initCurrentImg(BitmapLoader.FacePart.BOTTOM, bearIndex);
             //----------------鼻子---------------
-            MyPoint rnose = drawNose(canvas, face, paint);
-            //------------增加两个额头点----------
-            drawHead(canvas, face, paint, rnose);
+            drawNose(canvas, face, paint);
+            //------------画额头----------
+            drawHead(canvas, face, paint);
             //画眼镜或者面具
             drawEyes(canvas, face, paint);
-
             //画下吧
-            drawBottom(canvas, face, paint, rnose);
-
+            drawBottom(canvas, face, paint);
             //画上嘴唇
             drawTopMouth(canvas, face, paint);
-
 
             count++;
             if (count % 2 == 0) {
                 noseIndex++;
                 headIndex++;
                 eyeIndex++;
+                bearIndex++;
+                mouthIndex++;
+            }
+            if (count > 1000000) {
+                count = 0;
             }
         }
     }
 
+    //绘制上嘴唇
     private static void drawTopMouth(Canvas canvas, FaceRect face, Paint aPaint) {
         if (!mouthShow) {
             return;
         }
         canvas.save();
+        //配置
+        float scaleOfImg = 0.6f;//图片缩放因子，相对左右嘴角的距离
+        float offsetScaleOfWidth = 0.5f;//绘制起点相对图片的宽度偏移量比例
+        float offsetScaleOfHeight = 1.0f;//绘制起点相对图片的高度偏移量比例
+        //----------------------------------
         MyPoint topMouth = new MyPoint(face.point[13].x, face.point[13].y);
         MyPoint rMouth = new MyPoint(face.point[19].x, face.point[19].y);
         MyPoint lMouth = new MyPoint(face.point[20].x, face.point[20].y);
         float distance = MathUtil.getDistance(rMouth, lMouth);
         float degree = MathUtil.getDegree(rMouth, lMouth);
-        float scale = 0.6f;
-        float newWidth2 = distance * scale;
-        float newHeight2 = distance * scale * mouthImg.getHeight() / mouthImg.getWidth();
-        Bitmap map2 = Bitmap.createScaledBitmap(mouthImg, (int) newWidth2, (int) newHeight2, false);
-        canvas.rotate((float) degree, topMouth.x, topMouth.y);
-        canvas.drawBitmap(map2, topMouth.x - map2.getWidth() / 2, topMouth.y, aPaint);
+        float newWidth = distance * scaleOfImg;
+        float newHeight = distance * scaleOfImg * mouthImg.getHeight() / mouthImg.getWidth();
+        Bitmap targetMap = Bitmap.createScaledBitmap(mouthImg, (int) newWidth, (int) newHeight, false);
+        canvas.rotate(degree, topMouth.x, topMouth.y);
+        canvas.drawBitmap(targetMap, topMouth.x - targetMap.getWidth() * offsetScaleOfWidth, topMouth.y * offsetScaleOfHeight, aPaint);
         canvas.restore();
     }
 
-    private static void drawBottom(Canvas canvas, FaceRect face, Paint aPaint, MyPoint aRnose) {
+    //绘制下巴
+    private static void drawBottom(Canvas canvas, FaceRect face, Paint aPaint) {
         if (!BitmapLoader.bearShow) {
             return;
         }
         canvas.save();
+        //配置
+        float scaleOfImg = 5f;//图片缩放因子，相对眼和鼻子的距离来说
+        float offsetScaleOfWidth = 0.5f;//绘制起点相对图片的宽度偏移量
+        float offsetScaleOfHeight = 0.5f;//绘制起点相对图片的高度偏移量
+        //----------------------------------
+        MyPoint sREye = new MyPoint(face.point[7].x, face.point[7].y);
+        MyPoint aRnose = new MyPoint(face.point[10].x, face.point[10].y);
         MyPoint rMouth = new MyPoint(face.point[19].x, face.point[19].y);
         MyPoint lMouth = new MyPoint(face.point[20].x, face.point[20].y);
+        //鼻子和眼镜的距离
         float noseLength = MathUtil.getDistance(sREye, aRnose);
-        MyPoint lBottom = MathUtil.getThirdPointRightDown(rMouth, lMouth, noseLength / 3);
-        MyPoint rBottom = MathUtil.getThirdPointLeftUp(rMouth, lMouth, noseLength / 3);
-        MyPoint mBottom = MathUtil.getMiddle(rBottom, lBottom);
-        float degree = MathUtil.getDegree(rBottom, lBottom);
-        float fa2 = bearImg.getHeight() * 1.0f / bearImg.getWidth();
-        float newWidth2 = (float) (6 * noseLength);
-        float newHeight2 = newWidth2 * fa2;
-        Bitmap map2 = Bitmap.createScaledBitmap(bearImg, (int) newWidth2, (int) newHeight2, false);
-        canvas.rotate((float) degree, mBottom.x, mBottom.y);
-        canvas.drawBitmap(map2, mBottom.x - map2.getWidth() / 2, mBottom.y - map2.getHeight() / 2, aPaint);
+        MyPoint mBottom = new MyPoint(face.point[15].x, face.point[15].y);
+        //嘴唇旋转角度
+        float degree = MathUtil.getDegree(rMouth, lMouth);
+        //图片新宽高
+        float newWidth = scaleOfImg * noseLength;
+        float newHeight = noseLength * scaleOfImg * bearImg.getHeight() / bearImg.getWidth();
+        Bitmap targetMap = Bitmap.createScaledBitmap(bearImg, (int) newWidth, (int) newHeight, false);
+        canvas.rotate(degree, mBottom.x, mBottom.y);
+        canvas.drawBitmap(targetMap, mBottom.x - targetMap.getWidth() * offsetScaleOfWidth,
+                mBottom.y - targetMap.getHeight() * offsetScaleOfHeight, aPaint);
         canvas.restore();
     }
 
+    //绘制眼睛
     private static void drawEyes(Canvas canvas, FaceRect face, Paint aPaint) {
         if (!BitmapLoader.eyeShow) {
             return;
         }
         canvas.save();
+        //配置
+        float scaleOfImg = 5f;//图片缩放因子，相对眼睛的宽度
+        float offsetScaleOfWidth = 0.5f;//绘制起点相对图片的宽度偏移量
+        float offsetScaleOfHeight = 0.5f;//绘制起点相对图片的高度偏移量
+        //----------------------------------
+        MyPoint sREye = new MyPoint(face.point[7].x, face.point[7].y);
+        MyPoint sLEye = new MyPoint(face.point[8].x, face.point[8].y);
         MyPoint midEye = MathUtil.getMiddle(sLEye, sREye);
         float rightEyeLength = MathUtil.getDistance(sREye, new MyPoint(face.point[6].x, face.point[6].y));
         float leftEyeLength = MathUtil.getDistance(sLEye, new MyPoint(face.point[9].x, face.point[9].y));
-        float eyeInterval = rightEyeLength > leftEyeLength ? rightEyeLength : leftEyeLength;//更长的眼睛
-        float fa2 = eyeImg.getHeight() * 1.0f / eyeImg.getWidth();
-        float newWidth3 = (float) (6 * eyeInterval);
-        float newHeight3 = newWidth3 * fa2;
-        Bitmap map2 = Bitmap.createScaledBitmap(eyeImg, (int) newWidth3, (int) newHeight3, false);
-        sAtanEyes = MathUtil.getDegree(sREye, sLEye);
+        //更长的眼睛作为距离
+        float eyeInterval = rightEyeLength > leftEyeLength ? rightEyeLength : leftEyeLength;
+        //图片新宽高
+        float newWidth = scaleOfImg * eyeInterval;
+        float newHeight = scaleOfImg * eyeInterval * eyeImg.getHeight() / eyeImg.getWidth();
+        Bitmap targetMap = Bitmap.createScaledBitmap(eyeImg, (int) newWidth, (int) newHeight, false);
+        double sAtanEyes = MathUtil.getDegree(sREye, sLEye);
         canvas.rotate((float) sAtanEyes, midEye.x, midEye.y);
-        canvas.drawBitmap(map2, midEye.x - map2.getWidth() / 2, midEye.y - map2.getHeight() / 2, aPaint);
+        canvas.drawBitmap(targetMap, midEye.x - targetMap.getWidth() * offsetScaleOfWidth,
+                midEye.y - targetMap.getHeight() * offsetScaleOfHeight, aPaint);
         canvas.restore();
     }
 
-    private static void drawHead(Canvas canvas, FaceRect face, Paint aPaint, MyPoint aRnose) {
-        sREye = new MyPoint(face.point[7].x, face.point[7].y);
-        sLEye = new MyPoint(face.point[8].x, face.point[8].y);
+    //绘制额头
+    private static void drawHead(Canvas canvas, FaceRect face, Paint aPaint) {
         if (!BitmapLoader.headShow) {
             return;
         }
         canvas.save();
-        float noseLength = (float) Math.sqrt((sREye.x - aRnose.x) * (sREye.x - aRnose.x) + (sREye.y - aRnose.y) * (sREye.y - aRnose.y));
-        MyPoint lHead = MathUtil.getThirdPointLeft(sREye, sLEye, noseLength);
-        MyPoint rHead = MathUtil.getThirdPointRight(sREye, sLEye, noseLength);
+        //配置
+        float scaleOfImg = 6f;//图片缩放因子，相对鼻子左右点的距离
+        float scaleOfOffSet = 3f;//偏移量因子，基础值是鼻子和眼镜的距离
+        float offsetScaleOfWidth = 0.5f;//绘制起点相对图片的宽度偏移量
+        float offsetScaleOfHeight = 0.5f;//绘制起点相对图片的高度偏移量
+        //----------------------------------
+        MyPoint aRnose = new MyPoint(face.point[10].x, face.point[10].y);
+        MyPoint sREye = new MyPoint(face.point[7].x, face.point[7].y);
+        MyPoint sLEye = new MyPoint(face.point[8].x, face.point[8].y);
+        //获得眼睛和鼻子的距离
+        float noseLength = MathUtil.getDistance(sREye, aRnose);
+        //计算得到第3,4,个点，基础偏移量是眼睛和鼻子的距离
+        MyPoint lHead = MathUtil.getThirdPointLeft(sREye, sLEye, noseLength * scaleOfOffSet);
+        MyPoint rHead = MathUtil.getThirdPointRight(sREye, sLEye, noseLength * scaleOfOffSet);
         MyPoint mHead = new MyPoint((rHead.x + lHead.x) / 2, (rHead.y + lHead.y) / 2);
-        float tanEyes = 1.0f * (sREye.y - sLEye.y) / (sREye.x - sLEye.x);
-        sAtanEyes = Math.toDegrees(Math.atan(tanEyes));
-        float fa2 = headImg.getHeight() * 1.0f / headImg.getWidth();
-        float newWidth2 = (float) (5.6 * noseLength);
-        float newHeight2 = newWidth2 * fa2;
-        Bitmap map2 = Bitmap.createScaledBitmap(headImg, (int) newWidth2, (int) newHeight2, false);
-        canvas.rotate((float) sAtanEyes, mHead.x, mHead.y);
-        canvas.drawBitmap(map2, mHead.x - map2.getWidth() / 2, mHead.y - map2.getHeight() / 2, aPaint);
+        //获得旋转角度
+        float sAtanEyes = MathUtil.getDegree(sREye, sLEye);
+        //新图片宽高
+        float newWidth = scaleOfImg * noseLength;
+        float newHeight = newWidth * headImg.getHeight() / headImg.getWidth();
+        Bitmap targetMap = Bitmap.createScaledBitmap(headImg, (int) newWidth, (int) newHeight, false);
+        canvas.rotate(sAtanEyes, mHead.x, mHead.y);
+        canvas.drawBitmap(targetMap, mHead.x - targetMap.getWidth() * offsetScaleOfWidth,
+                mHead.y - targetMap.getHeight() * offsetScaleOfHeight, aPaint);
         canvas.restore();
     }
 
-    @NonNull
-    private static MyPoint drawNose(Canvas canvas, FaceRect face, Paint aPaint) {
+    // 绘制鼻子
+    private static void drawNose(Canvas canvas, FaceRect face, Paint aPaint) {
+        if (!BitmapLoader.noseShow) {
+            return;
+        }
         canvas.save();
+        //配置
+        float scaleOfImg = 6f;//图片缩放因子，相对鼻子左右点的距离
+        float offsetScaleOfWidth = 0.5f;//绘制起点相对图片的宽度偏移量
+        float offsetScaleOfHeight = 0.5f;//绘制起点相对图片的高度偏移量
+        //----------------------------------
         MyPoint rnose = new MyPoint(face.point[10].x, face.point[10].y);
         MyPoint lnose = new MyPoint(face.point[12].x, face.point[12].y);
         MyPoint tnose = new MyPoint(face.point[18].x, face.point[18].y);
-        if (!BitmapLoader.noseShow) {
-            canvas.restore();
-            return rnose;
-        }
-        double atan = MathUtil.getDegree(rnose, lnose);
-        float fa = noseImg.getHeight() * 1.0f / noseImg.getWidth();
-        float newWidth = 5 * (rnose.x - lnose.x);
-        float newHeight = newWidth * fa;
-        Bitmap map = Bitmap.createScaledBitmap(noseImg, (int) newWidth, (int) newHeight, false);
-        canvas.rotate((float) atan, tnose.x, tnose.y);
-        canvas.drawBitmap(map, tnose.x - map.getWidth() / 2, tnose.y - map.getHeight() / 2, aPaint);
+        float atan = MathUtil.getDegree(rnose, lnose);
+        float distance = MathUtil.getDistance(rnose, lnose);
+        float newWidth = scaleOfImg * distance;
+        float newHeight = newWidth * noseImg.getHeight() / noseImg.getWidth();
+        Bitmap targetMap = Bitmap.createScaledBitmap(noseImg, (int) newWidth, (int) newHeight, false);
+        canvas.rotate(atan, tnose.x, tnose.y);
+        canvas.drawBitmap(targetMap, tnose.x - targetMap.getWidth() * offsetScaleOfWidth,
+                tnose.y - targetMap.getHeight() * offsetScaleOfHeight, aPaint);
         canvas.restore();
-        return rnose;
     }
 
     /**

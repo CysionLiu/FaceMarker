@@ -9,8 +9,8 @@ public class MathUtil {
     public static MyPoint getThirdPointLeft(MyPoint aOne, MyPoint aTwo, float p) {
         float cos = (float) (Math.abs((aOne.y - aTwo.y)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
         float sin = (float) (Math.abs((aOne.x - aTwo.x)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
-        float deltaX = Math.abs(p * cos * 3f);
-        float deltaY = Math.abs(p * sin * 3f);
+        float deltaX = Math.abs(p * cos);
+        float deltaY = Math.abs(p * sin);
         float x3 = 0;
         float y3 = 0;
         if (aOne.y > aTwo.y) {
@@ -26,8 +26,8 @@ public class MathUtil {
     public static MyPoint getThirdPointRight(MyPoint aOne, MyPoint aTwo, float p) {
         float cos = (float) (Math.abs((aOne.y - aTwo.y)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
         float sin = (float) (Math.abs((aOne.x - aTwo.x)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
-        float deltaX = Math.abs(p * cos * 3f);
-        float deltaY = Math.abs(p * sin * 3f);
+        float deltaX = Math.abs(p * cos);
+        float deltaY = Math.abs(p * sin);
         float x3 = 0;
         float y3 = 0;
         if (aOne.y > aTwo.y) {
@@ -42,8 +42,8 @@ public class MathUtil {
     public static MyPoint getThirdPointLeftUp(MyPoint aOne, MyPoint aTwo, float p) {
         float cos = (float) (Math.abs((aOne.y - aTwo.y)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
         float sin = (float) (Math.abs((aOne.x - aTwo.x)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
-        float deltaX = Math.abs(p * cos * 3f);
-        float deltaY = Math.abs(p * sin * 3f);
+        float deltaX = Math.abs(p * cos);
+        float deltaY = Math.abs(p * sin);
         float x3 = 0;
         float y3 = 0;
         if (aOne.y > aTwo.y) {
@@ -59,8 +59,8 @@ public class MathUtil {
     public static MyPoint getThirdPointRightDown(MyPoint aOne, MyPoint aTwo, float p) {
         float cos = (float) (Math.abs((aOne.y - aTwo.y)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
         float sin = (float) (Math.abs((aOne.x - aTwo.x)) / Math.sqrt((aOne.x - aTwo.x) * (aOne.x - aTwo.x) + (aOne.y - aTwo.y) * (aOne.y - aTwo.y)));
-        float deltaX = Math.abs(p * cos * 3f);
-        float deltaY = Math.abs(p * sin * 3f);
+        float deltaX = Math.abs(p * cos);
+        float deltaY = Math.abs(p * sin);
         float x3 = 0;
         float y3 = 0;
         if (aOne.y > aTwo.y) {

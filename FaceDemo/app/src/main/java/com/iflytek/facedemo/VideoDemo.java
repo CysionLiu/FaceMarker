@@ -400,6 +400,7 @@ public class VideoDemo extends Activity implements FrameCallback {
     @Override
     protected void onResume() {
         super.onResume();
+        restoreChecked();
         mPreviewSurface.setVisibility(View.VISIBLE);
         mFaceSurface.setVisibility(View.VISIBLE);
         if (null != mAcc) {
@@ -478,6 +479,14 @@ public class VideoDemo extends Activity implements FrameCallback {
                 }
             }
         }).start();
+    }
+
+    private void restoreChecked() {
+        ((SwitchCompat)findViewById(R.id.sw_nose)).setChecked(BitmapLoader.noseShow);
+        ((SwitchCompat)findViewById(R.id.sw_ear)).setChecked(BitmapLoader.headShow);
+        ((SwitchCompat)findViewById(R.id.sw_eye)).setChecked(BitmapLoader.eyeShow);
+        ((SwitchCompat)findViewById(R.id.sw_bear)).setChecked(BitmapLoader.bearShow);
+        ((SwitchCompat)findViewById(R.id.sw_momuth)).setChecked(BitmapLoader.mouthShow);
     }
 
     @Override
