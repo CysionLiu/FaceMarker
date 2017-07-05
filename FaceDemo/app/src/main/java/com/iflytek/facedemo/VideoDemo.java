@@ -65,6 +65,7 @@ import com.iflytek.facedemo.util.ParseResult;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -338,8 +339,7 @@ public class VideoDemo extends Activity implements FrameCallback {
 
         Parameters params = mCamera.getParameters();
         params.setPreviewFormat(ImageFormat.NV21);
-        params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        params.setFlashMode(Parameters.FLASH_MODE_AUTO);
+        initCameraMode(params);
         params.setPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT);
         mCamera.setParameters(params);
 
@@ -545,6 +545,7 @@ public class VideoDemo extends Activity implements FrameCallback {
             mCamera = Camera.open(cameraId);
             mController.setImageDirection(cameraId);
             Parameters params = mCamera.getParameters();
+            initCameraMode(params);
             params.setPreviewFormat(ImageFormat.NV21);
             params.setPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT);
             mCamera.setParameters(params);
@@ -582,6 +583,21 @@ public class VideoDemo extends Activity implements FrameCallback {
         public void onDrawFrame(GL10 gl) {
         }
 
+    }
+
+    private void initCameraMode(Parameters aParams) {
+        List<String> focusModes = aParams.getSupportedFocusModes();
+        if(focusModes != null){
+            if (((Build.MODEL.startsWith("GT-I950"))
+                    || (Build.MODEL.endsWith("SCH-I959"))
+                    || (Build.MODEL.endsWith("MEIZU MX3")))&&focusModes.contains(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+
+                aParams.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            }else if(focusModes.contains(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)){
+                aParams.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            }else
+                aParams.setFocusMode(Parameters.FOCUS_MODE_FIXED);
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
