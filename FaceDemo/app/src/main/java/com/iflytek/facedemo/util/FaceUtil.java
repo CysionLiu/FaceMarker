@@ -24,20 +24,17 @@ import java.util.regex.Pattern;
 
 import static com.iflytek.facedemo.util.BitmapLoader.bearImg;
 import static com.iflytek.facedemo.util.BitmapLoader.eyeImg;
+import static com.iflytek.facedemo.util.BitmapLoader.eyeIndex;
 import static com.iflytek.facedemo.util.BitmapLoader.headImg;
 import static com.iflytek.facedemo.util.BitmapLoader.mouthImg;
 import static com.iflytek.facedemo.util.BitmapLoader.mouthShow;
-import static com.iflytek.facedemo.util.BitmapLoader.noseImg;
+import static com.iflytek.facedemo.util.BitmapLoader.*;
 
 public class FaceUtil {
     public final static int REQUEST_PICTURE_CHOOSE = 1;
     public final static int REQUEST_CAMERA_IMAGE = 2;
     public final static int REQUEST_CROP_IMAGE = 3;
-    public static int noseIndex = 0;
-    public static int headIndex = 0;
-    public static int eyeIndex = 0;
-    public static int bearIndex = 0;
-    public static int mouthIndex = 0;
+
     public static int count = 0;
 
     /***
@@ -175,11 +172,11 @@ public class FaceUtil {
             if (!loader.isImgsReady()) {
                 return;
             }
-            loader.initCurrentImg(BitmapLoader.FacePart.EYE, eyeIndex);
-            loader.initCurrentImg(BitmapLoader.FacePart.HEAD, headIndex);
-            loader.initCurrentImg(BitmapLoader.FacePart.NOSE, noseIndex);
-            loader.initCurrentImg(BitmapLoader.FacePart.MOUTH, mouthIndex);
-            loader.initCurrentImg(BitmapLoader.FacePart.BOTTOM, bearIndex);
+            loader.initCurrentImg(BitmapLoader.FacePart.EYE);
+            loader.initCurrentImg(BitmapLoader.FacePart.HEAD);
+            loader.initCurrentImg(BitmapLoader.FacePart.NOSE);
+            loader.initCurrentImg(BitmapLoader.FacePart.MOUTH);
+            loader.initCurrentImg(BitmapLoader.FacePart.BOTTOM);
             //----------------鼻子---------------
             drawNose(canvas, face, paint);
             //------------画额头----------
@@ -295,8 +292,8 @@ public class FaceUtil {
         }
         canvas.save();
         //配置
-        float scaleOfImg = 6f;//图片缩放因子，相对鼻子左右点的距离
-        float scaleOfOffSet = 3f;//偏移量因子，基础值是鼻子和眼镜的距离
+        float scaleOfImg = 5f;//图片缩放因子，相对鼻子左右点的距离
+        float scaleOfOffSet = 1.5f;//偏移量因子，基础值是鼻子和眼镜的距离
         float offsetScaleOfWidth = 0.5f;//绘制起点相对图片的宽度偏移量
         float offsetScaleOfHeight = 0.5f;//绘制起点相对图片的高度偏移量
         //----------------------------------
@@ -328,7 +325,7 @@ public class FaceUtil {
         }
         canvas.save();
         //配置
-        float scaleOfImg = 6f;//图片缩放因子，相对鼻子左右点的距离
+        float scaleOfImg = 4.5f;//图片缩放因子，相对鼻子左右点的距离
         float offsetScaleOfWidth = 0.5f;//绘制起点相对图片的宽度偏移量
         float offsetScaleOfHeight = 0.5f;//绘制起点相对图片的高度偏移量
         //----------------------------------

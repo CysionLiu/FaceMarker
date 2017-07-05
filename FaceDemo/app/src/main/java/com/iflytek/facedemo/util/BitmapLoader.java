@@ -28,12 +28,17 @@ public class BitmapLoader {
     public static boolean bearShow = false;
     public static boolean mouthShow = false;
     //图片数量
-    public int noseLength = 22;
-    public int headLength = 17;
+    public int noseLength = 12;
+    public int headLength = 12;
     public int eyeLength = 1;
     public int bearLength = 1;
     public int mouthLength = 1;
     //
+    public static int noseIndex = 0;
+    public static int headIndex = 0;
+    public static int eyeIndex = 0;
+    public static int bearIndex = 0;
+    public static int mouthIndex = 0;
     private static Context mContext;
     private List<Bitmap> noseImgs = new ArrayList<>();
     private List<Bitmap> headImgs = new ArrayList<>();
@@ -85,9 +90,9 @@ public class BitmapLoader {
         }
         String[] paths = null;
         try {
-            paths = mContext.getAssets().list("huzi");
+            paths = mContext.getAssets().list("huxu");
             for (int i = 0; i < paths.length; i++) {
-                noseImgs.add(loadAssets("huzi/" + paths[i]));
+                noseImgs.add(loadAssets("huxu/" + paths[i]));
             }
         } catch (IOException aE) {
             aE.printStackTrace();
@@ -102,9 +107,9 @@ public class BitmapLoader {
         }
         String[] paths = null;
         try {
-            paths = mContext.getAssets().list("ear");
+            paths = mContext.getAssets().list("erduo2");
             for (int i = 0; i < paths.length; i++) {
-                headImgs.add(loadAssets("ear/" + paths[i]));
+                headImgs.add(loadAssets("erduo2/" + paths[i]));
             }
         } catch (IOException aE) {
             aE.printStackTrace();
@@ -165,8 +170,8 @@ public class BitmapLoader {
 
     //图片是否加载完全
     public boolean isImgsReady() {
-        if (noseImgs.size() <= noseLength ||
-                headImgs.size() <= headLength ||
+        if (noseImgs.size() < noseLength ||
+                headImgs.size() < headLength ||
                 eyeImgs.size() < eyeLength ||
                 bearImgs.size() < bearLength || mouthImgs.size() < mouthLength) {
             return false;
@@ -174,37 +179,37 @@ public class BitmapLoader {
         return true;
     }
 
-    public void initCurrentImg(FacePart part, int index) {
+    public void initCurrentImg(FacePart part) {
         switch (part) {
             case EYE:
-                if (index >= eyeImgs.size()) {
-                    index = 0;
+                if (eyeIndex >= eyeImgs.size()) {
+                    eyeIndex = 0;
                 }
-                eyeImg = eyeImgs.get(index);
+                eyeImg = eyeImgs.get(eyeIndex);
                 break;
             case HEAD:
-                if (index >= headImgs.size()) {
-                    index = 0;
+                if (headIndex >= headImgs.size()) {
+                    headIndex = 0;
                 }
-                headImg = headImgs.get(index);
+                headImg = headImgs.get(headIndex);
                 break;
             case MOUTH:
-                if (index >= mouthImgs.size()) {
-                    index = 0;
+                if (mouthIndex >= mouthImgs.size()) {
+                    mouthIndex = 0;
                 }
-                mouthImg = mouthImgs.get(index);
+                mouthImg = mouthImgs.get(mouthIndex);
                 break;
             case NOSE:
-                if (index >= noseImgs.size()) {
-                    index = 0;
+                if (noseIndex >= noseImgs.size()) {
+                    noseIndex = 0;
                 }
-                noseImg = noseImgs.get(index);
+                noseImg = noseImgs.get(noseIndex);
                 break;
             case BOTTOM:
-                if (index >= bearImgs.size()) {
-                    index = 0;
+                if (bearIndex >= bearImgs.size()) {
+                    bearIndex = 0;
                 }
-                bearImg = bearImgs.get(index);
+                bearImg = bearImgs.get(bearIndex);
                 break;
             default:
                 break;
