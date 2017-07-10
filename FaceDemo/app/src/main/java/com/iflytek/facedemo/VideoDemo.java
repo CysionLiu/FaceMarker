@@ -53,6 +53,7 @@ import android.widget.Toast;
 import com.iflytek.cloud.FaceDetector;
 import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.util.Accelerometer;
+import com.iflytek.facedemo.entity.MaskBeanProxy;
 import com.iflytek.facedemo.filter.Beauty;
 import com.iflytek.facedemo.filter.LookupFilter;
 import com.iflytek.facedemo.open.FrameCallback;
@@ -61,11 +62,14 @@ import com.iflytek.facedemo.open.TextureController;
 import com.iflytek.facedemo.util.BitmapLoader;
 import com.iflytek.facedemo.util.FaceRect;
 import com.iflytek.facedemo.util.FaceUtil;
+import com.iflytek.facedemo.util.MathUtil;
 import com.iflytek.facedemo.util.ParseResult;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -107,13 +111,16 @@ public class VideoDemo extends Activity implements FrameCallback {
     private SeekBar mSeek;
     private LookupFilter mLookupFilter;
     private Beauty mBeautyFilter;
+    private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         System.loadLibrary("msc");
+        MaskBeanProxy.init(this);
         SpeechUtility.createUtility(this, "appid=594a31fc");
         super.onCreate(savedInstanceState);
+//        execute();
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 //            mRenderer = new Camera2Renderer();
 //        } else {
@@ -130,31 +137,31 @@ public class VideoDemo extends Activity implements FrameCallback {
     }
 
     private void setConfig() {
-        ((SwitchCompat)findViewById(R.id.sw_nose)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        ((SwitchCompat) findViewById(R.id.sw_nose)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 BitmapLoader.noseShow = isChecked;
             }
         });
-        ((SwitchCompat)findViewById(R.id.sw_ear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        ((SwitchCompat) findViewById(R.id.sw_ear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 BitmapLoader.headShow = isChecked;
             }
         });
-        ((SwitchCompat)findViewById(R.id.sw_eye)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        ((SwitchCompat) findViewById(R.id.sw_eye)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 BitmapLoader.eyeShow = isChecked;
             }
         });
-        ((SwitchCompat)findViewById(R.id.sw_bear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        ((SwitchCompat) findViewById(R.id.sw_bear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 BitmapLoader.bearShow = isChecked;
             }
         });
-        ((SwitchCompat)findViewById(R.id.sw_momuth)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        ((SwitchCompat) findViewById(R.id.sw_momuth)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 BitmapLoader.mouthShow = isChecked;
@@ -206,6 +213,8 @@ public class VideoDemo extends Activity implements FrameCallback {
         controller.addFilter(mLookupFilter);
         mBeautyFilter = new Beauty(getResources());
         controller.addFilter(mBeautyFilter);
+        mLookupFilter.setIntensity(0.5f);
+        mBeautyFilter.setFlag(3);
     }
 
     @SuppressLint("ShowToast")
@@ -213,12 +222,15 @@ public class VideoDemo extends Activity implements FrameCallback {
     private void initUI() {
         mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
-
+        //--
         mSeek = (SeekBar) findViewById(R.id.mSeek);
         mSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.e("wuwang", "process:" + progress);
+                progress += 50;
+                if (progress > 120) {
+                    progress = 100;
+                }
                 mLookupFilter.setIntensity(progress / 100f);
                 mBeautyFilter.setFlag(progress / 20 + 1);
             }
@@ -364,20 +376,19 @@ public class VideoDemo extends Activity implements FrameCallback {
             });
             mCamera.startPreview();
 
-        } catch (IOException e)
-            {
-            }
-            if (mFaceDetector == null)
-
-            {
-                /**
-                 * 离线视频流检测功能需要单独下载支持离线人脸的SDK
-                 * 请开发者前往语音云官网下载对应SDK
-                 */
-                // 创建单例失败，与 21001 错误为同样原因，参考 http://bbs.xfyun.cn/forum.php?mod=viewthread&tid=9688
-                showTip("创建对象失败，请确认 libmsc.so 放置正确，\n 且有调用 createUtility 进行初始化");
-            }
+        } catch (IOException e) {
         }
+        if (mFaceDetector == null)
+
+        {
+            /**
+             * 离线视频流检测功能需要单独下载支持离线人脸的SDK
+             * 请开发者前往语音云官网下载对应SDK
+             */
+            // 创建单例失败，与 21001 错误为同样原因，参考 http://bbs.xfyun.cn/forum.php?mod=viewthread&tid=9688
+            showTip("创建对象失败，请确认 libmsc.so 放置正确，\n 且有调用 createUtility 进行初始化");
+        }
+    }
 
     private void closeCamera() {
         if (null != mCamera) {
@@ -431,7 +442,6 @@ public class VideoDemo extends Activity implements FrameCallback {
                         // SDK中使用0,1,2,3,4分别表示0,90,180,270和360度
                         direction = (4 - direction) % 4;
                     }
-                    Log.e("flag--", "run(VideoDemo.java:389)-->>");
                     if (mFaceDetector == null) {
                         /**
                          * 离线视频流检测功能需要单独下载支持离线人脸的SDK
@@ -442,8 +452,7 @@ public class VideoDemo extends Activity implements FrameCallback {
                         break;
                     }
                     String result = mFaceDetector.trackNV21(buffer, PREVIEW_WIDTH, PREVIEW_HEIGHT, isAlign, direction);
-                    Log.d(TAG, "result:" + result);
-
+//                    Lg.trace("result--->" + result);
                     FaceRect[] faces = ParseResult.parseResult(result);
 
                     Canvas canvas = mFaceSurface.getHolder().lockCanvas();
@@ -461,10 +470,10 @@ public class VideoDemo extends Activity implements FrameCallback {
 
                     if (null != faces && frontCamera == (CameraInfo.CAMERA_FACING_FRONT == mCameraId) && direction == 3) {
                         for (FaceRect face : faces) {
-                            face.bound = FaceUtil.RotateDeg90(face.bound, PREVIEW_WIDTH, PREVIEW_HEIGHT);
+                            face.bound = MathUtil.RotateDeg90(face.bound, PREVIEW_WIDTH, PREVIEW_HEIGHT);
                             if (face.point != null) {
                                 for (int i = 0; i < face.point.length; i++) {
-                                    face.point[i] = FaceUtil.RotateDeg90(face.point[i], PREVIEW_WIDTH, PREVIEW_HEIGHT);
+                                    face.point[i] = MathUtil.RotateDeg90(face.point[i], PREVIEW_WIDTH, PREVIEW_HEIGHT);
                                 }
                             }
                             FaceUtil.drawFaceRect(VideoDemo.this, canvas, face, PREVIEW_WIDTH, PREVIEW_HEIGHT,
@@ -482,11 +491,40 @@ public class VideoDemo extends Activity implements FrameCallback {
     }
 
     private void restoreChecked() {
-        ((SwitchCompat)findViewById(R.id.sw_nose)).setChecked(BitmapLoader.noseShow);
-        ((SwitchCompat)findViewById(R.id.sw_ear)).setChecked(BitmapLoader.headShow);
-        ((SwitchCompat)findViewById(R.id.sw_eye)).setChecked(BitmapLoader.eyeShow);
-        ((SwitchCompat)findViewById(R.id.sw_bear)).setChecked(BitmapLoader.bearShow);
-        ((SwitchCompat)findViewById(R.id.sw_momuth)).setChecked(BitmapLoader.mouthShow);
+//        ((SwitchCompat) findViewById(R.id.sw_nose)).setChecked(BitmapLoader.noseShow);
+//        ((SwitchCompat) findViewById(R.id.sw_ear)).setChecked(BitmapLoader.headShow);
+//        ((SwitchCompat) findViewById(R.id.sw_eye)).setChecked(BitmapLoader.eyeShow);
+//        ((SwitchCompat) findViewById(R.id.sw_bear)).setChecked(BitmapLoader.bearShow);
+//        ((SwitchCompat) findViewById(R.id.sw_momuth)).setChecked(BitmapLoader.mouthShow);
+    }
+
+    private boolean isFinished = true;
+
+    private void execute(final String path, final int location, final int type) {
+        if (!isFinished) {
+            return;
+        }
+        isFinished = false;
+        mExecutorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                //若已准备好，且还在绘制，则阻塞，并设置应该回收的标志
+                MaskBeanProxy.single().setShouldRelease(true);
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException aE) {
+                    aE.printStackTrace();
+                }
+                //此时并未绘制，回收
+                if (MaskBeanProxy.single().isShouldRelease() && !MaskBeanProxy.single().isOnDrawing()) {
+                    MaskBeanProxy.single().release();
+                }
+                if (!MaskBeanProxy.single().isOnDrawing()) {
+                    MaskBeanProxy.single().update(path, location, type);
+                }
+                isFinished = true;
+            }
+        });
     }
 
     @Override
@@ -518,6 +556,18 @@ public class VideoDemo extends Activity implements FrameCallback {
     @Override
     public void onFrame(byte[] bytes, long time) {
 
+    }
+
+    public void changeFace(View view) {
+        execute("model0.zip", 0, 0);
+    }
+
+    public void changeFace1(View view) {
+        execute("model1.zip", 0, 0);
+    }
+
+    public void changeFace2(View view) {
+        execute("model2.zip", 0, 0);
     }
 
 
@@ -587,15 +637,15 @@ public class VideoDemo extends Activity implements FrameCallback {
 
     private void initCameraMode(Parameters aParams) {
         List<String> focusModes = aParams.getSupportedFocusModes();
-        if(focusModes != null){
+        if (focusModes != null) {
             if (((Build.MODEL.startsWith("GT-I950"))
                     || (Build.MODEL.endsWith("SCH-I959"))
-                    || (Build.MODEL.endsWith("MEIZU MX3")))&&focusModes.contains(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+                    || (Build.MODEL.endsWith("MEIZU MX3"))) && focusModes.contains(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
 
                 aParams.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            }else if(focusModes.contains(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)){
+            } else if (focusModes.contains(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
                 aParams.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-            }else
+            } else
                 aParams.setFocusMode(Parameters.FOCUS_MODE_FIXED);
         }
     }

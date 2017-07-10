@@ -5,6 +5,11 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.iflytek.facedemo.entity.MaskBean;
+import com.iflytek.facedemo.entity.MaskBeanProxy;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,8 +34,8 @@ public class BitmapLoader {
     public static boolean mouthShow = false;
     //图片数量
     public int noseLength = 12;
-    public int headLength = 12;
-    public int eyeLength = 1;
+    public int headLength = 17;
+    public int eyeLength = 3;
     public int bearLength = 1;
     public int mouthLength = 1;
     //
@@ -58,6 +63,7 @@ public class BitmapLoader {
         getMouthImgs();
         getNoseImgs();
     }
+
 
     public static synchronized BitmapLoader getInstance(Context aContext) {
         if (instance == null) {
@@ -107,9 +113,9 @@ public class BitmapLoader {
         }
         String[] paths = null;
         try {
-            paths = mContext.getAssets().list("erduo2");
+            paths = mContext.getAssets().list("erduo");
             for (int i = 0; i < paths.length; i++) {
-                headImgs.add(loadAssets("erduo2/" + paths[i]));
+                headImgs.add(loadAssets("erduo/" + paths[i]));
             }
         } catch (IOException aE) {
             aE.printStackTrace();
@@ -124,9 +130,9 @@ public class BitmapLoader {
         }
         String[] paths = null;
         try {
-            paths = mContext.getAssets().list("eye");
+            paths = mContext.getAssets().list("glass");
             for (int i = 0; i < paths.length; i++) {
-                eyeImgs.add(loadAssets("eye/" + paths[i]));
+                eyeImgs.add(loadAssets("glass/" + paths[i]));
             }
         } catch (IOException aE) {
             aE.printStackTrace();
@@ -233,4 +239,76 @@ public class BitmapLoader {
     enum FacePart {
         EYE, HEAD, MOUTH, NOSE, BOTTOM
     }
+
+    public static void loadImgsFromDir(MaskBeanProxy aMaskBeanProxy, String dir) {
+        MaskBean maskBean = aMaskBeanProxy.getMask();
+        boolean isReady = false;
+        MaskBean.HeadBean head = maskBean.getHead();
+        if (head != null) {
+            isReady = initPart(aMaskBeanProxy.getHeadImgs(), dir + File.separator + "head", head.getImgCount());
+            aMaskBeanProxy.setHeadImg(aMaskBeanProxy.getHeadImgs().get(head.getIndex()));
+        }
+        Lg.trace("loadhead");
+        MaskBean.EyeBean eyeBean = maskBean.getEye();
+        if (eyeBean != null) {
+            isReady = initPart(aMaskBeanProxy.getEyeImgs(), dir + File.separator + "eye", eyeBean.getImgCount());
+            aMaskBeanProxy.setEyeImg(aMaskBeanProxy.getEyeImgs().get(eyeBean.getIndex()));
+        }
+        Lg.trace("loadeye");
+        MaskBean.NoseBean noseBean = maskBean.getNose();
+        if (noseBean != null) {
+            isReady = initPart(aMaskBeanProxy.getNoseImgs(), dir + File.separator + "nose", noseBean.getImgCount());
+            aMaskBeanProxy.setNoseImg(aMaskBeanProxy.getNoseImgs().get(noseBean.getIndex()));
+        }
+        Lg.trace("loadnose");
+        MaskBean.MouthBean mouthBean = maskBean.getMouth();
+        if (mouthBean != null) {
+            isReady = initPart(aMaskBeanProxy.getMouthImgs(), dir + File.separator + "mouth", mouthBean.getImgCount());
+            aMaskBeanProxy.setNoseImg(aMaskBeanProxy.getMouthImgs().get(mouthBean.getIndex()));
+        }
+        Lg.trace("loadmouth");
+        MaskBean.ChinBean chinBean = maskBean.getChin();
+        if (chinBean != null) {
+            isReady = initPart(aMaskBeanProxy.getChinImgs(), dir + File.separator + "chin", chinBean.getImgCount());
+            aMaskBeanProxy.setChinImg(aMaskBeanProxy.getChinImgs().get(chinBean.getIndex()));
+        }
+        Lg.trace("loadImgsFromDir(BitmapLoader.java:270)-->>" + isReady);
+        aMaskBeanProxy.setReady(isReady);
+    }
+
+    private static boolean initPart(List<Bitmap> imgs, String aPath, int count) {
+        int imgCount = count;
+        String path = aPath;
+        Lg.trace("initPart(BitmapLoader.java:275)-->>" + path);
+        File headFile = new File(path);
+        if (headFile.exists() && headFile.isDirectory()) {
+            File[] files = headFile.listFiles();
+            if (files.length < imgCount) {
+                return false;
+            }
+            for (int i = 0; i < files.length; i++) {
+                imgs.add(loadBitmapFromFiles(files[i]));
+            }
+            return true;
+        }
+        return false;
+    }
+
+    //从file里读取bitmap
+    public static Bitmap loadBitmapFromFiles(File file) {
+        Bitmap image = null;
+        if (!file.exists()) {
+            return image;
+        }
+        Lg.trace("loadBitmapFromFiles(BitmapLoader.java:298)-->>");
+        try {
+            InputStream is = new FileInputStream(file);
+            image = BitmapFactory.decodeStream(is);
+            is.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return image;
+    }
+
 }

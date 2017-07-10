@@ -12,6 +12,7 @@
         android:id="@+id/sfv_face"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
+
     <android.support.v7.widget.AppCompatSeekBar
         android:id="@+id/mSeek"
         android:layout_width="match_parent"
@@ -22,44 +23,90 @@
 
     <LinearLayout
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/mSeek"
+        android:orientation="horizontal"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_above="@id/mSeek"
+            android:background="#99ff"
+            android:gravity="center"
+            android:onClick="changeFace"
+            android:text="素材1"
+            />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="20dp"
+            android:background="#99ff"
+            android:gravity="center"
+            android:onClick="changeFace1"
+            android:orientation="horizontal"
+            android:text="素材2"
+            />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_above="@id/mSeek"
+            android:layout_marginLeft="20dp"
+            android:background="#99ff"
+            android:gravity="center"
+            android:onClick="changeFace2"
+            android:orientation="horizontal"
+            android:text="素材3"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_above="@id/mSeek"
         android:orientation="horizontal"
         android:paddingLeft="4dp"
-        android:paddingRight="4dp">
+        android:paddingRight="4dp"
+        android:visibility="gone">
 
         <android.support.v7.widget.SwitchCompat
-            android:layout_width="0dp"
-            android:layout_weight="1"
             android:id="@+id/sw_nose"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:text="鼻子"/>
+
         <android.support.v7.widget.SwitchCompat
-            android:layout_width="0dp"
             android:id="@+id/sw_ear"
-            android:layout_weight="1"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:text="耳朵"/>
+
         <android.support.v7.widget.SwitchCompat
-            android:layout_width="0dp"
-            android:layout_weight="1"
             android:id="@+id/sw_eye"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:text="眼睛"/>
+
         <android.support.v7.widget.SwitchCompat
-            android:layout_width="0dp"
-            android:layout_weight="1"
             android:id="@+id/sw_bear"
-            android:layout_height="match_parent"
-            android:text="下巴"/>
-        <android.support.v7.widget.SwitchCompat
             android:layout_width="0dp"
-            android:layout_weight="1"
-            android:id="@+id/sw_momuth"
             android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="下巴"/>
+
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/sw_momuth"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
             android:text="牙齿"/>
     </LinearLayout>
-
 
 
     <RadioGroup

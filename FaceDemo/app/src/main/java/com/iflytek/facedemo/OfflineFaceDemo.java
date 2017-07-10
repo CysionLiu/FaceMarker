@@ -1,10 +1,5 @@
 package com.iflytek.facedemo;
 
-import java.io.File;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
@@ -32,9 +27,14 @@ import android.widget.Toast;
 
 import com.iflytek.cloud.ErrorCode;
 import com.iflytek.cloud.FaceDetector;
+import com.iflytek.facedemo.util.BitmapUtils;
 import com.iflytek.facedemo.util.FaceRect;
-import com.iflytek.facedemo.util.FaceUtil;
 import com.iflytek.facedemo.util.ParseResult;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.File;
 
 /**
  * 离线人脸检测示例
@@ -84,7 +84,7 @@ public class OfflineFaceDemo extends Activity implements OnClickListener {
 			Intent intent = new Intent();
 			intent.setType("image/*");
 			intent.setAction(Intent.ACTION_PICK);
-			startActivityForResult(intent, FaceUtil.REQUEST_PICTURE_CHOOSE);
+			startActivityForResult(intent, BitmapUtils.REQUEST_PICTURE_CHOOSE);
 			break;
 		case R.id.offline_detect:
 			if (null != mImage) {				
@@ -124,7 +124,7 @@ public class OfflineFaceDemo extends Activity implements OnClickListener {
 			mIntent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
 			mIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(mPictureFile));
 			mIntent.putExtra(MediaStore.Images.Media.ORIENTATION, 0);
-			startActivityForResult(mIntent, FaceUtil.REQUEST_CAMERA_IMAGE);
+			startActivityForResult(mIntent, BitmapUtils.REQUEST_CAMERA_IMAGE);
 			break;
 
 		default:
@@ -163,7 +163,7 @@ public class OfflineFaceDemo extends Activity implements OnClickListener {
 		}
 		
 		String fileSrc = null;
-		if (requestCode == FaceUtil.REQUEST_PICTURE_CHOOSE) {
+		if (requestCode == BitmapUtils.REQUEST_PICTURE_CHOOSE) {
 			if ("file".equals(data.getData().getScheme())) {
 				// 有些低版本机型返回的Uri模式为file
 				fileSrc = data.getData().getPath();
@@ -178,8 +178,8 @@ public class OfflineFaceDemo extends Activity implements OnClickListener {
 				cursor.close();
 			}
 			// 跳转到图片裁剪页面
-			FaceUtil.cropPicture(this,Uri.fromFile(new File(fileSrc)));
-		} else if (requestCode == FaceUtil.REQUEST_CAMERA_IMAGE) {
+			BitmapUtils.cropPicture(this,Uri.fromFile(new File(fileSrc)));
+		} else if (requestCode == BitmapUtils.REQUEST_CAMERA_IMAGE) {
 			if (null == mPictureFile) {
 				showTip("拍照失败，请重试");
 				return;
@@ -188,18 +188,18 @@ public class OfflineFaceDemo extends Activity implements OnClickListener {
 			fileSrc = mPictureFile.getAbsolutePath();
 			updateGallery(fileSrc);
 			// 跳转到图片裁剪页面
-			FaceUtil.cropPicture(this,Uri.fromFile(new File(fileSrc)));
+			BitmapUtils.cropPicture(this,Uri.fromFile(new File(fileSrc)));
 		} 
-		else if (requestCode == FaceUtil.REQUEST_CROP_IMAGE) {
+		else if (requestCode == BitmapUtils.REQUEST_CROP_IMAGE) {
 			// 获取返回数据
 			Bitmap bmp = data.getParcelableExtra("data");
 			// 若返回数据不为null，保存至本地，防止裁剪时未能正常保存
 			if(null != bmp){
-				FaceUtil.saveBitmapToFile(OfflineFaceDemo.this, bmp);
+				BitmapUtils.saveBitmapToFile(OfflineFaceDemo.this, bmp);
 			}
 
 			// 获取图片保存路径
-			fileSrc = FaceUtil.getImagePath(OfflineFaceDemo.this);
+			fileSrc = BitmapUtils.getImagePath(OfflineFaceDemo.this);
 			// 获取图片的宽和高
 			Options options = new Options();
 			options.inJustDecodeBounds = true;
@@ -213,10 +213,10 @@ public class OfflineFaceDemo extends Activity implements OnClickListener {
 			mImage = BitmapFactory.decodeFile(fileSrc, options);
 			
 			// 部分手机会对图片做旋转，这里检测旋转角度
-			int degree = FaceUtil.readPictureDegree(fileSrc);
+			int degree = BitmapUtils.readPictureDegree(fileSrc);
 			if (degree != 0) {
 				// 把图片旋转为正的方向
-				mImage = FaceUtil.rotateImage(degree, mImage);
+				mImage = BitmapUtils.rotateImage(degree, mImage);
 			}
 
 			((ImageView) findViewById(R.id.offline_img)).setImageBitmap(mImage);

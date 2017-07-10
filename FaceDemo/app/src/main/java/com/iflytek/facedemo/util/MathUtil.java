@@ -1,5 +1,8 @@
 package com.iflytek.facedemo.util;
 
+import android.graphics.Point;
+import android.graphics.Rect;
+
 /**
  * Created by xianshang.liu on 2017/6/30.
  */
@@ -93,5 +96,38 @@ public class MathUtil {
         float tanEyes = 1.0f * (aOne.y - aTwo.y) / (aOne.x - aTwo.x);
         return (float) Math.toDegrees(Math.atan(tanEyes));
     }
+
+    /**
+     * 将点随原图顺时针旋转90度
+     *
+     * @param p      待旋转的点
+     * @param width  输入点对应的原图宽
+     * @param height 输入点对应的原图宽
+     * @return 旋转后的点
+     */
+    static public Point RotateDeg90(Point p, int width, int height) {
+        int x = p.x;
+        p.x = height - p.y;
+        p.y = x;
+        return p;
+    }
+
+    /**
+     * 将矩形随原图顺时针旋转90度
+     *
+     * @param r      待旋转的矩形
+     * @param width  输入矩形对应的原图宽
+     * @param height 输入矩形对应的原图高
+     * @return 旋转后的矩形
+     */
+    static public Rect RotateDeg90(Rect r, int width, int height) {
+        int left = r.left;
+        r.left = height - r.bottom;
+        r.bottom = r.right;
+        r.right = height - r.top;
+        r.top = left;
+        return r;
+    }
+
 
 }

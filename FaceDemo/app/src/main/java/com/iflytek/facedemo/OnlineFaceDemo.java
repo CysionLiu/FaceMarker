@@ -1,14 +1,5 @@
 package com.iflytek.facedemo;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.util.Iterator;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -45,7 +36,16 @@ import com.iflytek.cloud.RequestListener;
 import com.iflytek.cloud.SpeechConstant;
 import com.iflytek.cloud.SpeechError;
 import com.iflytek.cloud.SpeechUtility;
-import com.iflytek.facedemo.util.FaceUtil;
+import com.iflytek.facedemo.util.BitmapUtils;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 
 /**
  * 在线人脸示例
@@ -374,7 +374,7 @@ public class OnlineFaceDemo extends Activity implements OnClickListener {
 				cursor.close();
 			}
 			// 跳转到图片裁剪页面
-			FaceUtil.cropPicture(this,Uri.fromFile(new File(fileSrc)));
+			BitmapUtils.cropPicture(this,Uri.fromFile(new File(fileSrc)));
 		} else if (requestCode == REQUEST_CAMERA_IMAGE) {
 			if (null == mPictureFile) {
 				showTip("拍照失败，请重试");
@@ -384,16 +384,16 @@ public class OnlineFaceDemo extends Activity implements OnClickListener {
 			fileSrc = mPictureFile.getAbsolutePath();
 			updateGallery(fileSrc);
 			// 跳转到图片裁剪页面
-			FaceUtil.cropPicture(this,Uri.fromFile(new File(fileSrc)));
-		} else if (requestCode == FaceUtil.REQUEST_CROP_IMAGE) {
+			BitmapUtils.cropPicture(this,Uri.fromFile(new File(fileSrc)));
+		} else if (requestCode == BitmapUtils.REQUEST_CROP_IMAGE) {
 			// 获取返回数据
 			Bitmap bmp = data.getParcelableExtra("data");
 			// 若返回数据不为null，保存至本地，防止裁剪时未能正常保存
 			if(null != bmp){
-				FaceUtil.saveBitmapToFile(OnlineFaceDemo.this, bmp);
+				BitmapUtils.saveBitmapToFile(OnlineFaceDemo.this, bmp);
 			}
 			// 获取图片保存路径
-			fileSrc = FaceUtil.getImagePath(OnlineFaceDemo.this);
+			fileSrc = BitmapUtils.getImagePath(OnlineFaceDemo.this);
 			// 获取图片的宽和高
 			Options options = new Options();
 			options.inJustDecodeBounds = true;
@@ -414,10 +414,10 @@ public class OnlineFaceDemo extends Activity implements OnClickListener {
 			}
 			
 			// 部分手机会对图片做旋转，这里检测旋转角度
-			int degree = FaceUtil.readPictureDegree(fileSrc);
+			int degree = BitmapUtils.readPictureDegree(fileSrc);
 			if (degree != 0) {
 				// 把图片旋转为正的方向
-				mImage = FaceUtil.rotateImage(degree, mImage);
+				mImage = BitmapUtils.rotateImage(degree, mImage);
 			}
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
