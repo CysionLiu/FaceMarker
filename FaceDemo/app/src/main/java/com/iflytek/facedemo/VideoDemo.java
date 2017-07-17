@@ -213,8 +213,8 @@ public class VideoDemo extends Activity implements FrameCallback {
         controller.addFilter(mLookupFilter);
         mBeautyFilter = new Beauty(getResources());
         controller.addFilter(mBeautyFilter);
-        mLookupFilter.setIntensity(0.5f);
-        mBeautyFilter.setFlag(3);
+//        mLookupFilter.setIntensity(0.5f);
+//        mBeautyFilter.setFlag(3);
     }
 
     @SuppressLint("ShowToast")
@@ -544,6 +544,7 @@ public class VideoDemo extends Activity implements FrameCallback {
         super.onDestroy();
         if (null != mFaceDetector) {
             // 销毁对象
+            MaskBeanProxy.single().release();
             mFaceDetector.destroy();
         }
     }
@@ -568,6 +569,10 @@ public class VideoDemo extends Activity implements FrameCallback {
 
     public void changeFace2(View view) {
         execute("model2.zip", 0, 0);
+    }
+
+    public void changeFace3(View view) {
+        execute("model3.zip", 0, 0);
     }
 
 

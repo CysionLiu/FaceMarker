@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.util.Log;
 
 import com.iflytek.facedemo.entity.MaskBean;
 import com.iflytek.facedemo.entity.MaskBeanProxy;
@@ -32,6 +33,7 @@ public class FaceUtil {
         if (canvas == null) {
             return;
         }
+        Log.e("flag--","drawFaceRect(FaceUtil.java:36)-->>"+System.currentTimeMillis());
         Paint paint = new Paint();
         Rect rect = face.bound;
         if (frontCamera) {
