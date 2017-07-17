@@ -32,6 +32,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
 import android.support.annotation.RequiresApi;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SwitchCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -53,6 +55,8 @@ import android.widget.Toast;
 import com.iflytek.cloud.FaceDetector;
 import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.util.Accelerometer;
+import com.iflytek.facedemo.adapter.GlobalAdapter;
+import com.iflytek.facedemo.adapter.GlobalData;
 import com.iflytek.facedemo.entity.MaskBeanProxy;
 import com.iflytek.facedemo.filter.Beauty;
 import com.iflytek.facedemo.filter.LookupFilter;
@@ -66,6 +70,7 @@ import com.iflytek.facedemo.util.MathUtil;
 import com.iflytek.facedemo.util.ParseResult;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -112,6 +117,7 @@ public class VideoDemo extends Activity implements FrameCallback {
     private LookupFilter mLookupFilter;
     private Beauty mBeautyFilter;
     private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
+    private RecyclerView mRecyclerView;
 
 
     @Override
@@ -222,6 +228,11 @@ public class VideoDemo extends Activity implements FrameCallback {
     private void initUI() {
         mPreviewSurface = (SurfaceView) findViewById(R.id.sfv_preview);
         mFaceSurface = (SurfaceView) findViewById(R.id.sfv_face);
+        mRecyclerView = (RecyclerView) findViewById(R.id.recycler);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        List<GlobalData> data = getData();
+        GlobalAdapter mAdapter = new GlobalAdapter(data, this);
+        mRecyclerView.setAdapter(mAdapter);
         //--
         mSeek = (SeekBar) findViewById(R.id.mSeek);
         mSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -314,6 +325,17 @@ public class VideoDemo extends Activity implements FrameCallback {
 
         setSurfaceSize();
         mToast = Toast.makeText(VideoDemo.this, "", Toast.LENGTH_SHORT);
+    }
+
+    private List<GlobalData> getData() {
+        List<GlobalData> data = new ArrayList<>();
+        for (int i = 0; i < 9; i++) {
+            GlobalData d = new GlobalData();
+            d.setIndex(i);
+            d.setTitle("素材" + (i + 1));
+            data.add(d);
+        }
+        return data;
     }
 
     private void openCamera() {
@@ -559,20 +581,9 @@ public class VideoDemo extends Activity implements FrameCallback {
 
     }
 
-    public void changeFace(View view) {
-        execute("model0.zip", 0, 0);
-    }
-
-    public void changeFace1(View view) {
-        execute("model1.zip", 0, 0);
-    }
-
-    public void changeFace2(View view) {
-        execute("model2.zip", 0, 0);
-    }
-
-    public void changeFace3(View view) {
-        execute("model3.zip", 0, 0);
+    public void changeFace(GlobalData data) {
+        Log.e("flag--","changeFace(VideoDemo.java:585)-->>"+"model" + data.getIndex() + ".zip");
+        execute("model" + data.getIndex() + ".zip", 0, 0);
     }
 
 
