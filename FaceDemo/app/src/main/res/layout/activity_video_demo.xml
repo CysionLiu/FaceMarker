@@ -16,91 +16,18 @@
     <android.support.v7.widget.AppCompatSeekBar
         android:id="@+id/mSeek"
         android:layout_width="match_parent"
-        android:layout_height="30dp"
+        android:layout_height="20dp"
+        android:visibility="gone"
         android:layout_alignParentBottom="true"
-        android:layout_margin="20dp"
+        android:layout_margin="10dp"
         android:background="#ffffffff"/>
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler"
+        android:layout_marginBottom="10dp"
         android:layout_width="match_parent"
-        android:layout_height="42dp"
-        android:layout_above="@id/mSeek"></android.support.v7.widget.RecyclerView>
-
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_above="@id/mSeek"
-        android:orientation="horizontal"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp"
-        android:visibility="gone">
-
-        <android.support.v7.widget.SwitchCompat
-            android:id="@+id/sw_nose"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="鼻子"/>
-
-        <android.support.v7.widget.SwitchCompat
-            android:id="@+id/sw_ear"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="耳朵"/>
-
-        <android.support.v7.widget.SwitchCompat
-            android:id="@+id/sw_eye"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="眼睛"/>
-
-        <android.support.v7.widget.SwitchCompat
-            android:id="@+id/sw_bear"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="下巴"/>
-
-        <android.support.v7.widget.SwitchCompat
-            android:id="@+id/sw_momuth"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="牙齿"/>
-    </LinearLayout>
-
-
-    <RadioGroup
-        android:id="@+id/align_mode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:visibility="gone"
-        android:weightSum="2"
-        >
-
-        <RadioButton
-            android:id="@+id/detect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:checked="true"
-            android:text="检测"
-            />
-
-        <RadioButton
-            android:id="@+id/align"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="聚焦"
-            />
-    </RadioGroup>
+        android:layout_height="68dp"
+        ></android.support.v7.widget.RecyclerView>
 
 </RelativeLayout>

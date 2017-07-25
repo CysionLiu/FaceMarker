@@ -2,19 +2,30 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               android:layout_width="wrap_content"
-              android:layout_height="match_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginLeft="20dp"
+              android:layout_marginRight="20dp"
+              android:background="#33FF"
+              android:elevation="2dp"
               android:orientation="vertical"
-              android:padding="3dp">
+    >
 
     <TextView
         android:id="@+id/text_holder_item"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginRight="10dp"
         android:background="#ff0077ff"
         android:padding="5dp"
-        android:textSize="24sp"
-        android:layout_marginRight="10dp"
         android:textColor="#ffffff00"
+        android:textSize="24sp"
+        android:visibility="gone"
         tools:text="模型一"/>
+
+    <ImageView
+        android:id="@+id/img_holder_item"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:layout_marginRight="2dp"/>
 
 </LinearLayout>

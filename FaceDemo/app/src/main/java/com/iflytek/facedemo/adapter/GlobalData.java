@@ -6,7 +6,16 @@ package com.iflytek.facedemo.adapter;
 
 public class GlobalData {
     private String title;
+    private int resId;
     private int index;
+
+    public int getResId() {
+        return resId;
+    }
+
+    public void setResId(int aResId) {
+        resId = aResId;
+    }
 
     public int getIndex() {
         return index;

@@ -34,7 +34,6 @@ import android.os.Process;
 import android.support.annotation.RequiresApi;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SwitchCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -44,9 +43,6 @@ import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.CompoundButton;
-import android.widget.RadioGroup;
-import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
 import android.widget.SeekBar;
@@ -63,7 +59,6 @@ import com.iflytek.facedemo.filter.LookupFilter;
 import com.iflytek.facedemo.open.FrameCallback;
 import com.iflytek.facedemo.open.Renderer;
 import com.iflytek.facedemo.open.TextureController;
-import com.iflytek.facedemo.util.BitmapLoader;
 import com.iflytek.facedemo.util.FaceRect;
 import com.iflytek.facedemo.util.FaceUtil;
 import com.iflytek.facedemo.util.MathUtil;
@@ -143,36 +138,7 @@ public class VideoDemo extends Activity implements FrameCallback {
     }
 
     private void setConfig() {
-        ((SwitchCompat) findViewById(R.id.sw_nose)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                BitmapLoader.noseShow = isChecked;
-            }
-        });
-        ((SwitchCompat) findViewById(R.id.sw_ear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                BitmapLoader.headShow = isChecked;
-            }
-        });
-        ((SwitchCompat) findViewById(R.id.sw_eye)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                BitmapLoader.eyeShow = isChecked;
-            }
-        });
-        ((SwitchCompat) findViewById(R.id.sw_bear)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                BitmapLoader.bearShow = isChecked;
-            }
-        });
-        ((SwitchCompat) findViewById(R.id.sw_momuth)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                BitmapLoader.mouthShow = isChecked;
-            }
-        });
+
     }
 
 
@@ -219,8 +185,8 @@ public class VideoDemo extends Activity implements FrameCallback {
         controller.addFilter(mLookupFilter);
         mBeautyFilter = new Beauty(getResources());
         controller.addFilter(mBeautyFilter);
-//        mLookupFilter.setIntensity(0.5f);
-//        mBeautyFilter.setFlag(3);
+        mLookupFilter.setIntensity(0.6f);
+        mBeautyFilter.setFlag(3);
     }
 
     @SuppressLint("ShowToast")
@@ -305,34 +271,19 @@ public class VideoDemo extends Activity implements FrameCallback {
         });
 
 
-        RadioGroup alignGruop = (RadioGroup) findViewById(R.id.align_mode);
-        alignGruop.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(RadioGroup arg0, int arg1) {
-                switch (arg1) {
-                    case R.id.detect:
-                        isAlign = 0;
-                        break;
-                    case R.id.align:
-                        isAlign = 1;
-                        break;
-                    default:
-                        break;
-                }
-            }
-        });
 
         setSurfaceSize();
         mToast = Toast.makeText(VideoDemo.this, "", Toast.LENGTH_SHORT);
     }
 
+    int[] resIds = {R.drawable.p11,R.drawable.p22,R.drawable.p33,R.drawable.p44,R.drawable.p55,R.drawable.p66};
     private List<GlobalData> getData() {
         List<GlobalData> data = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 6; i++) {
             GlobalData d = new GlobalData();
             d.setIndex(i);
             d.setTitle("素材" + (i + 1));
+            d.setResId(resIds[i]);
             data.add(d);
         }
         return data;
@@ -583,7 +534,7 @@ public class VideoDemo extends Activity implements FrameCallback {
 
     public void changeFace(GlobalData data) {
         Log.e("flag--","changeFace(VideoDemo.java:585)-->>"+"model" + data.getIndex() + ".zip");
-        execute("model" + data.getIndex() + ".zip", 0, 0);
+        execute("model" + (data.getIndex() +3)+ ".zip", 0, 0);
     }
 
 
